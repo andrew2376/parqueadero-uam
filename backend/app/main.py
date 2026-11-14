@@ -1,0 +1,14 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.configuracion import obtener_configuracion
+from app.modulos.estado.presentacion.rutas import router_estado
+
+configuracion = obtener_configuracion()
+aplicacion = FastAPI(title=configuracion.nombre_aplicacion, version="0.1.0", docs_url="/docs")
+aplicacion.add_middleware(CORSMiddleware, allow_origins=configuracion.origenes_permitidos,
+    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+aplicacion.include_router(router_estado, prefix=configuracion.prefijo_api)
+
+@aplicacion.get("/", tags=["raiz"])
+def raiz() -> dict[str, str]:
+    return {"aplicacion": configuracion.nombre_aplicacion, "documentacion": "/docs"}
