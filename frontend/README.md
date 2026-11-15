@@ -1,59 +1,76 @@
-# FrontendTemp
+# Frontend — Sistema de Parqueadero con Reconocimiento de Placas (LPR)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.23.
+Aplicación web desarrollada en **Angular 21 + TypeScript** para la gestión operativa y administrativa del sistema de parqueadero UAM.
 
-## Development server
+---
 
-To start a local development server, run:
+## 1. Requisitos previos
+
+- **Node.js**: v20 o superior (recomendado v24+)
+- **npm**: v10 o superior
+- **Angular CLI**: v21 (opcional globalmente, ejecutable mediante `npx ng` o scripts npm)
+
+---
+
+## 2. Instalación de dependencias
+
+Desde la raíz de la carpeta `frontend/`, ejecutar:
 
 ```bash
+npm install
+```
+
+---
+
+## 3. Servidor de desarrollo local
+
+Para levantar el servidor de desarrollo:
+
+```bash
+npm start
+# O directamente:
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+La aplicación quedará disponible en:
+👉 `http://localhost:4200/`
 
-## Code scaffolding
+El servidor se recargará automáticamente ante cualquier cambio realizado en el código fuente.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+---
 
-```bash
-ng generate component component-name
-```
+## 4. Compilación (Build)
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+Para generar los archivos de producción optimizados:
 
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Los artefactos compilados se almacenan en el directorio `dist/`.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## 5. Pruebas unitarias
+
+Para ejecutar la suite de pruebas unitarias:
 
 ```bash
-ng test
+npm test
 ```
 
-## Running end-to-end tests
+---
 
-For end-to-end (e2e) testing, run:
+## 6. Estructura del proyecto
 
-```bash
-ng e2e
-```
+La arquitectura del frontend sigue el enfoque modular por funcionalidades (*feature-based*):
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- `src/app/core/`: Servicios transversales, interceptores HTTP, guards de autenticación y modelos de datos.
+- `src/app/shared/`: Componentes reutilizables (indicador visual de barrera, badges de vehículos, alertas).
+- `src/app/features/` (o `funcionalidades/`): Módulos funcionales de la aplicación:
+  - `auth/`: Inicio de sesión y control de acceso por roles (Operador / Administrador).
+  - `carril/`: Panel de carril con lectura simulada, confianza y control de barrera.
+  - `caja/`: Búsqueda de vehículos y cobro/pago en efectivo.
+  - `tarifas/`: Configuración y versionamiento de tarifas diurnas/nocturnas.
+  - `cupos/`: Monitoreo y ajuste de cupos por tipo de vehículo.
+  - `eventos/`: Consulta y reportes de entradas, salidas y cobros con filtros.
