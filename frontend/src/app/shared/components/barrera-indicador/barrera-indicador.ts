@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EstadoBarrera } from '../../core/models';
+import { EstadoBarrera } from '../../../core/models';
+
 
 @Component({
   selector: 'app-barrera-indicador',
