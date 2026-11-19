@@ -10,4 +10,5 @@ dist/
 coverage/
 .vscode/
 .idea/
+*.egg-info/
 *.log
