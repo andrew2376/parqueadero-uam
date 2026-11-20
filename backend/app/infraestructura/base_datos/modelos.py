@@ -9,3 +9,4 @@ from app.infraestructura.base_datos.conexion import Base
 
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
+from app.modulos.cobros.infraestructura.cobro_modelo import CobroModelo
