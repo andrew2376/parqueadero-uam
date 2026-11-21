@@ -12,6 +12,7 @@ import { RouterModule } from '@angular/router';
 export class SidebarComponent {
   menuItems = [
     { label: 'Panel general', route: '/panel', icon: 'dashboard' },
+    { label: 'Administración de carriles', route: '/carriles', icon: 'alt_route' },
     { label: 'Control de ingreso', route: '/ingreso', icon: 'login' },
     { label: 'Control de salida', route: '/salida', icon: 'logout' },
     { label: 'Caja y pagos', route: '/caja', icon: 'payments' },
