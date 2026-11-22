@@ -11,6 +11,10 @@ from app.modulos.pagos.presentacion.pago_router import (
     router as router_pagos,
 )
 
+from app.modulos.accesos.presentacion.reingreso_router import (
+    router as router_accesos,
+)
+
 configuracion = obtener_configuracion()
 
 aplicacion = FastAPI(
@@ -39,6 +43,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_pagos,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_accesos,
     prefix=configuracion.prefijo_api,
 )
 
