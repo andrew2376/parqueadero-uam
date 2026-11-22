@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -8,7 +8,6 @@ from app.modulos.cobros.infraestructura.cobro_modelo import CobroModelo
 from app.modulos.pagos.infraestructura.pago_modelo import PagoModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 from app.modulos.vehiculos.dominio.vehiculo import normalizar_placa
-
 
 
 class ValidarReingreso:
