@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,7 +7,9 @@ from app.modulos.estado.presentacion.rutas import router_estado
 from app.modulos.carriles.presentacion.carril_router import (
     router as router_carriles,
 )
-
+from app.modulos.pagos.presentacion.pago_router import (
+    router as router_pagos,
+)
 
 configuracion = obtener_configuracion()
 
@@ -33,6 +34,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_carriles,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_pagos,
     prefix=configuracion.prefijo_api,
 )
 
