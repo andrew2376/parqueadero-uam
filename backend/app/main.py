@@ -14,6 +14,9 @@ from app.modulos.pagos.presentacion.pago_router import (
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
 )
+from app.modulos.accesos.presentacion.ingreso_router import (
+    router as router_ingreso,
+)
 
 configuracion = obtener_configuracion()
 
@@ -48,6 +51,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_accesos,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_ingreso,
     prefix=configuracion.prefijo_api,
 )
 
