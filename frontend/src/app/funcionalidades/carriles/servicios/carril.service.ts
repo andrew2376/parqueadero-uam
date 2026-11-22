@@ -15,7 +15,7 @@ export class CarrilService {
 
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://localhost:8000/api/v1/carriles';
+  private readonly apiUrl = 'http://localhost:8001/api/v1/carriles';
 
   listarPorSede(sedeId: string): Observable<Carril[]> {
     return this.http.get<Carril[]>(
