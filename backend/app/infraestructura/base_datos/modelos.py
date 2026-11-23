@@ -1,3 +1,4 @@
+
 """
 Registro central de modelos SQLAlchemy.
 
@@ -11,3 +12,5 @@ from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 from app.modulos.cobros.infraestructura.cobro_modelo import CobroModelo
 from app.modulos.pagos.infraestructura.pago_modelo import PagoModelo
+from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
+

@@ -15,6 +15,10 @@ from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
 )
 
+from app.modulos.estancias.presentacion.estancia_router import (
+    router as router_estancias,
+)
+
 configuracion = obtener_configuracion()
 
 aplicacion = FastAPI(
@@ -51,8 +55,13 @@ aplicacion.include_router(
     prefix=configuracion.prefijo_api,
 )
 
+aplicacion.include_router(
+    router_estancias,
+    prefix=configuracion.prefijo_api,
+)
 
-@aplicacion.get("/", tags=["raiz"])
+
+@aplicacion.get('/', tags=["raiz"])
 def raiz() -> dict[str, str]:
     return {
         "aplicacion": configuracion.nombre_aplicacion,
