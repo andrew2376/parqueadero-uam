@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,6 +14,9 @@ from app.modulos.pagos.presentacion.pago_router import (
 
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
+)
+from app.modulos.accesos.presentacion.ingreso_router import (
+    router as router_ingreso,
 )
 
 from app.modulos.estancias.presentacion.estancia_router import (
@@ -57,6 +61,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_estancias,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_ingreso,
     prefix=configuracion.prefijo_api,
 )
 
