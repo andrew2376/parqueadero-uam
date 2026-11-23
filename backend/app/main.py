@@ -29,6 +29,10 @@ from app.modulos.reconocimiento_placas.presentacion.validacion_manual_router imp
     router as router_validacion_manual_lpr,
 )
 
+from app.modulos.eventos_lectura.presentacion.evento_lectura_router import (
+    router as router_eventos_lectura,
+)
+
 configuracion = obtener_configuracion()
 
 aplicacion = FastAPI(
@@ -86,6 +90,16 @@ aplicacion.include_router(
 )
 aplicacion.include_router(
     router_validacion_manual_lpr,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_estancias,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_eventos_lectura,
     prefix=configuracion.prefijo_api,
 )
 
