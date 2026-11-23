@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from app.modulos.autenticacion.dominio.usuario import Usuario
 
 

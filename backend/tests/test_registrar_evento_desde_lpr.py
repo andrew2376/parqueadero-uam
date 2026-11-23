@@ -1,4 +1,3 @@
-
 from uuid import uuid4
 
 import pytest
@@ -40,11 +39,7 @@ class CarrilRepositorioFake(CarrilRepositorio):
         return self.carriles.get(carril_id)
 
     def listar_por_sede(self, sede_id):
-        return [
-            carril
-            for carril in self.carriles.values()
-            if carril.sede_id == sede_id
-        ]
+        return [carril for carril in self.carriles.values() if carril.sede_id == sede_id]
 
     def actualizar(self, carril):
         self.carriles[carril.id] = carril
@@ -63,11 +58,7 @@ class EventoLecturaRepositorioFake(EventoLecturaRepositorio):
         return self.eventos.get(evento_id)
 
     def listar_por_sede(self, sede_id):
-        return [
-            evento
-            for evento in self.eventos.values()
-            if evento.sede_id == sede_id
-        ]
+        return [evento for evento in self.eventos.values() if evento.sede_id == sede_id]
 
 
 @pytest.fixture
@@ -81,9 +72,7 @@ def entorno():
         tipo=TipoCarril.ENTRADA,
     )
 
-    carriles = CarrilRepositorioFake({
-        carril.id: carril
-    })
+    carriles = CarrilRepositorioFake({carril.id: carril})
 
     eventos = EventoLecturaRepositorioFake()
 

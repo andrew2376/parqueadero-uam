@@ -1,9 +1,10 @@
 import hashlib
 import hmac
 from datetime import UTC, datetime, timedelta
+
 import jwt
 
-from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
+from app.modulos.autenticacion.dominio.usuario import Usuario
 from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
 
 # Clave secreta estándar para tokens JWT (mínimo 32 bytes para HMAC-SHA256)

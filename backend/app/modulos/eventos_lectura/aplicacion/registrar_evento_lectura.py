@@ -1,4 +1,3 @@
-
 from app.modulos.carriles.dominio.carril_repositorio import CarrilRepositorio
 from app.modulos.eventos_lectura.dominio.evento_lectura import EventoLectura
 from app.modulos.eventos_lectura.dominio.evento_lectura_repositorio import (
@@ -27,8 +26,6 @@ class RegistrarEventoLectura:
             raise ValueError("El carril indicado no existe.")
 
         if carril.sede_id != evento.sede_id:
-            raise ValueError(
-                "El carril indicado no pertenece a la sede especificada."
-            )
+            raise ValueError("El carril indicado no pertenece a la sede especificada.")
 
         return self.eventos.guardar(evento)

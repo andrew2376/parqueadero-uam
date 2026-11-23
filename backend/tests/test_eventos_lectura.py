@@ -1,4 +1,3 @@
-
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -41,9 +40,7 @@ def repositorios():
     return eventos, carriles
 
 
-def test_registrar_evento_correctamente(
-    evento, repositorios
-):
+def test_registrar_evento_correctamente(evento, repositorios):
     eventos, carriles = repositorios
 
     carriles.obtener_por_id.return_value = SimpleNamespace(
@@ -60,9 +57,7 @@ def test_registrar_evento_correctamente(
     eventos.guardar.assert_called_once_with(evento)
 
 
-def test_no_registrar_si_el_carril_no_existe(
-    evento, repositorios
-):
+def test_no_registrar_si_el_carril_no_existe(evento, repositorios):
     eventos, carriles = repositorios
 
     carriles.obtener_por_id.return_value = None
@@ -75,9 +70,7 @@ def test_no_registrar_si_el_carril_no_existe(
     eventos.guardar.assert_not_called()
 
 
-def test_no_registrar_si_el_carril_pertenece_a_otra_sede(
-    evento, repositorios
-):
+def test_no_registrar_si_el_carril_pertenece_a_otra_sede(evento, repositorios):
     eventos, carriles = repositorios
 
     carriles.obtener_por_id.return_value = SimpleNamespace(

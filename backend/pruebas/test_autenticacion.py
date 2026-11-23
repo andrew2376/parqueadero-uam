@@ -1,4 +1,5 @@
 import pytest
+from fastapi import HTTPException
 
 from app.modulos.autenticacion.aplicacion.servicio_autenticacion import (
     AutenticarUsuario,
@@ -10,10 +11,9 @@ from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
 from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria import (
     UsuarioRepositorioMemoria,
 )
-from app.modulos.autenticacion.presentacion.auth_router import login, obtener_perfil
+from app.modulos.autenticacion.presentacion.auth_router import login
 from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
 from app.modulos.autenticacion.presentacion.esquemas_auth import LoginEsquema
-from fastapi import HTTPException
 
 
 def test_hasheo_y_verificacion_password():

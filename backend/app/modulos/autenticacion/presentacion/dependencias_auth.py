@@ -1,7 +1,8 @@
 from collections.abc import Callable
+
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import jwt
 
 from app.modulos.autenticacion.aplicacion.servicio_autenticacion import (
     decodificar_token,

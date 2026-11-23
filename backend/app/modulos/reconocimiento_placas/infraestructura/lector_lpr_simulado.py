@@ -1,4 +1,3 @@
-
 import random
 from typing import ClassVar
 from uuid import UUID
@@ -45,11 +44,7 @@ class LectorLPRSimulado(LectorLPRPuerto):
         self.confianza_fija = confianza
 
     def capturar_lectura(self, carril_id: UUID) -> LecturaLPR:
-        placa = (
-            self.placa_fija
-            if self.placa_fija is not None
-            else random.choice(self.PLACAS_DEMO)
-        )
+        placa = self.placa_fija if self.placa_fija is not None else random.choice(self.PLACAS_DEMO)
 
         confianza = (
             self.confianza_fija

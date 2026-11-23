@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from app.modulos.autenticacion.aplicacion.servicio_autenticacion import hashear_password
 from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
 from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
