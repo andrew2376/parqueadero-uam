@@ -1,4 +1,3 @@
-
 from functools import lru_cache
 from pathlib import Path
 
@@ -19,10 +18,7 @@ class Configuracion(BaseSettings):
     zona_horaria: str = "America/Bogota"
     origenes_permitidos: list[str] = ["http://localhost:4200"]
 
-    model_config = SettingsConfigDict(
-        env_file=RUTA_ENV,
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=RUTA_ENV, extra="ignore")
 
 
 @lru_cache

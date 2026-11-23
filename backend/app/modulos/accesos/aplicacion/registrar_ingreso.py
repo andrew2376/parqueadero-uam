@@ -74,7 +74,9 @@ class RegistrarIngresoVehiculo:
 
         # 5. Validar cupos por tipo de vehículo
         cupos_maximos = sede.cupos_carro if tipo_vehiculo == TipoVehiculo.CARRO else sede.cupos_moto
-        ocupados = self.repositorio.contar_vehiculos_activos(sede_id=sede_id, tipo_vehiculo=tipo_vehiculo)
+        ocupados = self.repositorio.contar_vehiculos_activos(
+            sede_id=sede_id, tipo_vehiculo=tipo_vehiculo
+        )
         disponibles = cupos_maximos - ocupados
 
         if disponibles <= 0 and not es_reingreso:

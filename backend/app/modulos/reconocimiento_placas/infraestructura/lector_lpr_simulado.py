@@ -2,7 +2,9 @@ import random
 from typing import ClassVar
 from uuid import UUID
 
-from app.modulos.reconocimiento_placas.dominio.lector_lpr_puerto import LectorLPRPuerto
+from app.modulos.reconocimiento_placas.dominio.lector_lpr_puerto import (
+    LectorLPRPuerto,
+)
 from app.modulos.reconocimiento_placas.dominio.lectura_lpr import (
     LecturaLPR,
     OrigenLectura,
@@ -24,18 +26,31 @@ class LectorLPRSimulado(LectorLPRPuerto):
         "UAM100",  # Carro
     ]
 
-    def __init__(self, placa_fija: str | None = None, confianza_fija: float | None = None) -> None:
+    def __init__(
+        self,
+        placa_fija: str | None = None,
+        confianza_fija: float | None = None,
+    ) -> None:
         self.placa_fija = placa_fija
         self.confianza_fija = confianza_fija
 
-    def establecer_proxima_lectura(self, placa: str, confianza: float = 95.0) -> None:
+    def establecer_proxima_lectura(
+        self,
+        placa: str,
+        confianza: float = 95.0,
+    ) -> None:
         """Permite que las pruebas o la UI fuercen una placa específica."""
         self.placa_fija = placa
         self.confianza_fija = confianza
 
     def capturar_lectura(self, carril_id: UUID) -> LecturaLPR:
-        placa = self.placa_fija or random.choice(self.PLACAS_DEMO)
-        confianza = self.confianza_fija if self.confianza_fija is not None else round(random.uniform(85.0, 99.5), 1)
+        placa = self.placa_fija if self.placa_fija is not None else random.choice(self.PLACAS_DEMO)
+
+        confianza = (
+            self.confianza_fija
+            if self.confianza_fija is not None
+            else round(random.uniform(85.0, 99.5), 1)
+        )
 
         return LecturaLPR(
             carril_id=carril_id,
@@ -44,7 +59,11 @@ class LectorLPRSimulado(LectorLPRPuerto):
             origen=OrigenLectura.AUTOMATICO,
         )
 
-    def simular_lectura_manual(self, carril_id: UUID, placa: str) -> LecturaLPR:
+    def simular_lectura_manual(
+        self,
+        carril_id: UUID,
+        placa: str,
+    ) -> LecturaLPR:
         """Simula una digitación directa por parte del operador."""
         return LecturaLPR(
             carril_id=carril_id,

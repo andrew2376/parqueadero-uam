@@ -13,7 +13,6 @@ from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
 
 
 class AccesoRepositorioEnMemoria(AccesoRepositorio):
-
     def __init__(self):
         self.ingresos: list[RegistroIngreso] = []
 
@@ -31,7 +30,9 @@ class AccesoRepositorioEnMemoria(AccesoRepositorio):
         return sum(
             1
             for ing in self.ingresos
-            if ing.sede_id == sede_id and ing.tipo_vehiculo == tipo_vehiculo and ing.estado == EstadoAcceso.ACTIVO
+            if ing.sede_id == sede_id
+            and ing.tipo_vehiculo == tipo_vehiculo
+            and ing.estado == EstadoAcceso.ACTIVO
         )
 
 
@@ -50,13 +51,14 @@ class MockSession:
         class MockQuery:
             def filter(self, *f_args, **f_kwargs):
                 return self
+
             def first(self):
                 return None
+
         return MockQuery()
 
 
 class TestCasoUsoIngreso:
-
     def setup_method(self):
         self.sede_id = uuid4()
         self.carril_id = uuid4()

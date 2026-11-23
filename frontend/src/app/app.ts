@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './layout/sidebar/sidebar';
 import { HeaderComponent } from './layout/header/header';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -13,4 +14,6 @@ import { HeaderComponent } from './layout/header/header';
 })
 export class AppComponent {
   title = 'Parqueadero UAM';
+
+  constructor(public authService: AuthService) {}
 }

@@ -1,13 +1,16 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import obtener_configuracion
+from app.infraestructura.base_datos import modelos as modelos_registrados  # noqa: F401
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
+)
+from app.modulos.autenticacion.presentacion.auth_router import (
+    router as router_auth,
 )
 from app.modulos.carriles.presentacion.carril_router import (
     router as router_carriles,
@@ -18,6 +21,12 @@ from app.modulos.estancias.presentacion.estancia_router import (
 )
 from app.modulos.pagos.presentacion.pago_router import (
     router as router_pagos,
+)
+from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
+    router as router_lpr,
+)
+from app.modulos.reconocimiento_placas.presentacion.validacion_manual_router import (
+    router as router_validacion_manual_lpr,
 )
 
 configuracion = obtener_configuracion()
@@ -66,8 +75,21 @@ aplicacion.include_router(
     prefix=configuracion.prefijo_api,
 )
 
+aplicacion.include_router(
+    router_auth,
+    prefix=configuracion.prefijo_api,
+)
 
-@aplicacion.get('/', tags=["raiz"])
+aplicacion.include_router(
+    router_lpr,
+    prefix=configuracion.prefijo_api,
+)
+aplicacion.include_router(
+    router_validacion_manual_lpr,
+    prefix=configuracion.prefijo_api,
+)
+
+@aplicacion.get("/", tags=["raiz"])
 def raiz() -> dict[str, str]:
     return {
         "aplicacion": configuracion.nombre_aplicacion,

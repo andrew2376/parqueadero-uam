@@ -1,4 +1,3 @@
-
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -52,7 +51,7 @@ def crear_carril(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="La sede no existe o ya tiene un carril con ese nombre.",
-        )
+        ) from None
 
 
 @router.get(
@@ -113,13 +112,13 @@ def actualizar_carril(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
-        )
+        ) from error
     except IntegrityError:
         sesion.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Ya existe un carril con ese nombre en la sede.",
-        )
+        ) from None
 
 
 @router.patch(
@@ -143,4 +142,4 @@ def cambiar_estado_carril(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
-        )
+        ) from error

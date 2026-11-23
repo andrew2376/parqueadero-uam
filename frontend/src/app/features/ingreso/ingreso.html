@@ -1,0 +1,139 @@
+<div class="control-ingreso-page">
+  <!-- Cabecera de la sección -->
+  <div class="page-header">
+    <div class="header-info">
+      <h1 class="header-title">Control de ingreso</h1>
+      <p class="header-subtitle">Reconocimiento de placas y verificación manual</p>
+    </div>
+  </div>
+
+  <!-- Contenedor principal de dos columnas según Figma -->
+  <div class="ingreso-grid">
+    <!-- Columna Izquierda: Lectura de placa / Cámara LPR -->
+    <section class="card lpr-card">
+      <div class="card-header">
+        <h2 class="card-title">Lectura de placa</h2>
+        <span class="card-subtitle">Simulador LPR · Datos ficticios</span>
+      </div>
+
+      <!-- Visor de la cámara simulada -->
+      <div class="camera-viewport">
+        <span class="viewport-tag">VISTA SIMULADA · NO ES VIDEO EN VIVO</span>
+
+        <div class="car-illustration">
+          <!-- Carrocería esquemática -->
+          <div class="car-body">
+            <div class="car-windshield"></div>
+            <div class="plate-badge-preview">
+              <span class="plate-text">{{ placaActual || 'ABC123' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner de estado de la placa detectada -->
+      @if (placaActual) {
+        <div class="status-banner" [class.low-confidence]="esBajaConfianza">
+          <div class="status-content">
+            <strong class="banner-title">Placa detectada: {{ placaActual }}</strong>
+            <span class="banner-confidence">Confianza estimada: {{ confianzaActual }} %</span>
+          </div>
+        </div>
+      }
+
+      <!-- Botón de simular nueva lectura -->
+      <button
+        type="button"
+        class="btn-simulate"
+        (click)="onSimularLectura()"
+      >
+        Simular nueva lectura
+      </button>
+
+      <p class="card-foot-hint">Si la confianza es baja, verifica y corrige la placa.</p>
+    </section>
+
+    <!-- Columna Derecha: Verificar ingreso -->
+    <section class="card verify-card">
+      <div class="card-header">
+        <h2 class="card-title">Verificar ingreso</h2>
+        <span class="card-subtitle">Confirma o corrige los datos detectados.</span>
+      </div>
+
+      <form [formGroup]="ingresoForm" (ngSubmit)="onRegistrarIngreso()" class="verify-form">
+        <!-- Campo: Placa normalizada -->
+        <div class="form-group">
+          <label for="placa">Placa normalizada</label>
+          <div class="input-wrapper">
+            <input
+              id="placa"
+              type="text"
+              formControlName="placa"
+              placeholder="ABC123"
+              maxlength="6"
+              (input)="onPlacaManualChange()"
+            />
+          </div>
+        </div>
+
+        <!-- Campo: Tipo de vehículo -->
+        <div class="form-group">
+          <label for="tipoVehiculo">Tipo de vehículo</label>
+          <div class="input-wrapper readonly-wrapper">
+            <input
+              id="tipoVehiculo"
+              type="text"
+              formControlName="tipoVehiculoTexto"
+              readonly
+            />
+          </div>
+        </div>
+
+        <!-- Campo: Sede -->
+        <div class="form-group">
+          <label for="sede">Sede</label>
+          <div class="input-wrapper readonly-wrapper">
+            <input
+              id="sede"
+              type="text"
+              formControlName="sede"
+              readonly
+            />
+          </div>
+        </div>
+
+        <!-- Indicador de Cupos Disponibles -->
+        <div class="cupos-banner">
+          <span class="cupos-icon">🅿️</span>
+          <span class="cupos-text">Cupos disponibles: <strong>{{ cuposActuales }}</strong></span>
+        </div>
+
+        <!-- Mensaje de feedback de barrera tras registrar -->
+        @if (resultadoIngreso) {
+          <div class="barrier-result-box" [class.allowed]="resultadoIngreso.permitido" [class.denied]="!resultadoIngreso.permitido">
+            <div class="barrier-header-row">
+              <span class="traffic-light-dot" [class.green]="resultadoIngreso.permitido" [class.red]="!resultadoIngreso.permitido"></span>
+              <strong>{{ resultadoIngreso.permitido ? 'BARRERA LEVANTADA (ABIERTA)' : 'BARRERA CERRADA' }}</strong>
+            </div>
+            <p class="barrier-msg">{{ resultadoIngreso.mensaje }}</p>
+          </div>
+        }
+
+        <!-- Botón Registrar ingreso -->
+        <button
+          type="submit"
+          class="btn-register"
+          [disabled]="procesando || ingresoForm.invalid"
+        >
+          @if (procesando) {
+            <span>Registrando acceso...</span>
+          } @else {
+            <span>Registrar ingreso</span>
+          }
+        </button>
+
+        <p class="card-foot-hint text-center">Sin cupos disponibles, el ingreso se bloquea.</p>
+      </form>
+    </section>
+  </div>
+</div>

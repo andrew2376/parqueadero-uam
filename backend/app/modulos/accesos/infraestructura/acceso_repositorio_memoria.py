@@ -28,7 +28,9 @@ class AccesoRepositorioEnMemoria(AccesoRepositorio):
         return sum(
             1
             for ing in self._ingresos
-            if ing.sede_id == sede_id and ing.tipo_vehiculo == tipo_vehiculo and ing.estado == EstadoAcceso.ACTIVO
+            if ing.sede_id == sede_id
+            and ing.tipo_vehiculo == tipo_vehiculo
+            and ing.estado == EstadoAcceso.ACTIVO
         )
 
 
