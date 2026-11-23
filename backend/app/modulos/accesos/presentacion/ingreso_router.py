@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
 from app.modulos.accesos.aplicacion.registrar_ingreso import RegistrarIngresoVehiculo
-from app.modulos.accesos.infraestructura.acceso_repositorio_sqlalchemy import (
-    AccesoRepositorioSQLAlchemy,
+from app.modulos.accesos.dominio.acceso_repositorio import AccesoRepositorio
+from app.modulos.accesos.infraestructura.acceso_repositorio_memoria import (
+    obtener_repositorio_acceso,
 )
 from app.modulos.accesos.presentacion.esquemas_ingreso import (
     RegistrarIngresoEsquema,
@@ -25,8 +26,8 @@ router = APIRouter(
 def registrar_ingreso(
     datos: RegistrarIngresoEsquema,
     sesion: Session = Depends(obtener_sesion),
+    repositorio: AccesoRepositorio = Depends(obtener_repositorio_acceso),
 ) -> ResultadoIngresoEsquema:
-    repositorio = AccesoRepositorioSQLAlchemy(sesion)
     caso_uso = RegistrarIngresoVehiculo(repositorio=repositorio, sesion=sesion)
 
     resultado = caso_uso.ejecutar(
