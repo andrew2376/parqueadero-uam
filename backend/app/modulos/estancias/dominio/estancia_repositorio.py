@@ -6,7 +6,6 @@ from app.modulos.estancias.dominio.estancia import Estancia
 
 
 class EstanciaRepositorio(ABC):
-
     @abstractmethod
     def buscar_activa_por_placa(
         self,

@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -11,7 +10,6 @@ from app.modulos.vehiculos.dominio.vehiculo import normalizar_placa
 
 
 class RegistrarSalida:
-
     def __init__(self, repositorio: EstanciaRepositorio, sesion):
         self.repositorio = repositorio
         self.sesion = sesion
@@ -84,11 +82,7 @@ class RegistrarSalida:
             }
 
         # 4. Verificar pago
-        pago = (
-            self.sesion.query(PagoModelo)
-            .filter(PagoModelo.cobro_id == cobro.id)
-            .first()
-        )
+        pago = self.sesion.query(PagoModelo).filter(PagoModelo.cobro_id == cobro.id).first()
 
         if pago is None:
             return {

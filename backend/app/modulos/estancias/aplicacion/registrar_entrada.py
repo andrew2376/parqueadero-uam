@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from uuid import UUID
 
@@ -8,7 +7,6 @@ from app.modulos.vehiculos.dominio.vehiculo import normalizar_placa
 
 
 class RegistrarEntrada:
-
     def __init__(self, repositorio: EstanciaRepositorio):
         self.repositorio = repositorio
 
@@ -27,9 +25,7 @@ class RegistrarEntrada:
         )
 
         if estancia_activa is not None:
-            raise ValueError(
-                "El vehículo ya tiene una estancia activa en esta sede."
-            )
+            raise ValueError("El vehículo ya tiene una estancia activa en esta sede.")
 
         estancia = Estancia(
             id=None,

@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from uuid import UUID
 
@@ -10,7 +9,6 @@ from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 
 
 class EstanciaRepositorioSQLAlchemy(EstanciaRepositorio):
-
     def __init__(self, sesion: Session):
         self.sesion = sesion
 

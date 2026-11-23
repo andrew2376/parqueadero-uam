@@ -89,6 +89,7 @@ aplicacion.include_router(
     prefix=configuracion.prefijo_api,
 )
 
+
 @aplicacion.get("/", tags=["raiz"])
 def raiz() -> dict[str, str]:
     return {
