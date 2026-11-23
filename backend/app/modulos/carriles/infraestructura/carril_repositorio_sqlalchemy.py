@@ -1,4 +1,3 @@
-
 from uuid import UUID
 
 from sqlalchemy import select
@@ -37,16 +36,15 @@ class CarrilRepositorioSQLAlchemy(CarrilRepositorio):
         return self._convertir_a_dominio(modelo)
 
     def listar_por_sede(self, sede_id: UUID) -> list[Carril]:
-        consulta = select(CarrilModelo).where(
-            CarrilModelo.sede_id == sede_id
-        ).order_by(CarrilModelo.nombre)
+        consulta = (
+            select(CarrilModelo)
+            .where(CarrilModelo.sede_id == sede_id)
+            .order_by(CarrilModelo.nombre)
+        )
 
         modelos = self.sesion.scalars(consulta).all()
 
-        return [
-            self._convertir_a_dominio(modelo)
-            for modelo in modelos
-        ]
+        return [self._convertir_a_dominio(modelo) for modelo in modelos]
 
     def actualizar(self, carril: Carril) -> Carril:
         modelo = self.sesion.get(CarrilModelo, carril.id)

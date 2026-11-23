@@ -1,4 +1,3 @@
-
 from uuid import UUID, uuid4
 
 from app.modulos.carriles.dominio.carril import Carril, TipoCarril
@@ -6,7 +5,6 @@ from app.modulos.carriles.dominio.carril_repositorio import CarrilRepositorio
 
 
 class CrearCarril:
-
     def __init__(self, repositorio: CarrilRepositorio):
         self.repositorio = repositorio
 
@@ -27,7 +25,6 @@ class CrearCarril:
 
 
 class ObtenerCarril:
-
     def __init__(self, repositorio: CarrilRepositorio):
         self.repositorio = repositorio
 
@@ -36,7 +33,6 @@ class ObtenerCarril:
 
 
 class ListarCarrilesPorSede:
-
     def __init__(self, repositorio: CarrilRepositorio):
         self.repositorio = repositorio
 
@@ -45,7 +41,6 @@ class ListarCarrilesPorSede:
 
 
 class ActualizarCarril:
-
     def __init__(self, repositorio: CarrilRepositorio):
         self.repositorio = repositorio
 
@@ -67,7 +62,6 @@ class ActualizarCarril:
 
 
 class CambiarEstadoCarril:
-
     def __init__(self, repositorio: CarrilRepositorio):
         self.repositorio = repositorio
 

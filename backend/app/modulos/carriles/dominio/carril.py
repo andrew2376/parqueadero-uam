@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from enum import Enum
 from uuid import UUID
@@ -25,9 +24,7 @@ class Carril:
             raise ValueError("El nombre del carril es obligatorio.")
 
         if len(self.nombre) > 80:
-            raise ValueError(
-                "El nombre del carril no puede superar los 80 caracteres."
-            )
+            raise ValueError("El nombre del carril no puede superar los 80 caracteres.")
 
     def desactivar(self) -> None:
         self.activo = False

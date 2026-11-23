@@ -11,7 +11,6 @@ from app.modulos.vehiculos.dominio.vehiculo import normalizar_placa
 
 
 class ValidarReingreso:
-
     def __init__(self, sesion: Session):
         self.sesion = sesion
 
@@ -42,7 +41,7 @@ class ValidarReingreso:
         )
 
         if ahora < inicio_dia:
-            dia_operativo = (ahora.date() - timedelta(days=1))
+            dia_operativo = ahora.date() - timedelta(days=1)
         else:
             dia_operativo = ahora.date()
 

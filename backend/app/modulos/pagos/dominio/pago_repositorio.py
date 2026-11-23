@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from uuid import UUID
 
@@ -6,7 +5,6 @@ from app.modulos.pagos.dominio.pago import Pago
 
 
 class PagoRepositorio(ABC):
-
     @abstractmethod
     def buscar_por_clave_idempotencia(
         self,
