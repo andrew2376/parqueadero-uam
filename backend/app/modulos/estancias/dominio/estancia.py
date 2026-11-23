@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 
@@ -11,5 +10,5 @@ class Estancia:
     placa: str
     tipo_vehiculo: str
     fecha_hora_entrada: datetime
-    fecha_hora_salida: Optional[datetime]
+    fecha_hora_salida: datetime | None
     estado: str

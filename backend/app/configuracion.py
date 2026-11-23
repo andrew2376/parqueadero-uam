@@ -4,7 +4,6 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 # Ruta del archivo .env ubicado en la raíz del proyecto
 RUTA_ENV = Path(__file__).resolve().parents[2] / ".env"
 

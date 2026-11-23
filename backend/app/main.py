@@ -3,24 +3,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import obtener_configuracion
-from app.infraestructura.base_datos import modelos as modelos_registrados
-from app.modulos.estado.presentacion.rutas import router_estado
-from app.modulos.carriles.presentacion.carril_router import (
-    router as router_carriles,
-)
-from app.modulos.pagos.presentacion.pago_router import (
-    router as router_pagos,
-)
-
-from app.modulos.accesos.presentacion.reingreso_router import (
-    router as router_accesos,
-)
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )
-
+from app.modulos.accesos.presentacion.reingreso_router import (
+    router as router_accesos,
+)
+from app.modulos.carriles.presentacion.carril_router import (
+    router as router_carriles,
+)
+from app.modulos.estado.presentacion.rutas import router_estado
 from app.modulos.estancias.presentacion.estancia_router import (
     router as router_estancias,
+)
+from app.modulos.pagos.presentacion.pago_router import (
+    router as router_pagos,
 )
 
 configuracion = obtener_configuracion()

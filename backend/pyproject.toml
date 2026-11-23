@@ -18,3 +18,5 @@ testpaths = ["pruebas"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+[tool.ruff.lint]
+ignore = ["B008"]

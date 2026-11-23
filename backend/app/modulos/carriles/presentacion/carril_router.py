@@ -13,7 +13,6 @@ from app.modulos.carriles.aplicacion.casos_uso_carril import (
     ListarCarrilesPorSede,
     ObtenerCarril,
 )
-from app.modulos.carriles.dominio.carril import TipoCarril
 from app.modulos.carriles.infraestructura.carril_repositorio_sqlalchemy import (
     CarrilRepositorioSQLAlchemy,
 )

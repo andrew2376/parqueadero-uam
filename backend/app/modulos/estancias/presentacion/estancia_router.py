@@ -3,19 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
-
 from app.modulos.estancias.aplicacion.registrar_entrada import RegistrarEntrada
 from app.modulos.estancias.aplicacion.registrar_salida import RegistrarSalida
-
 from app.modulos.estancias.infraestructura.estancia_repositorio_sqlalchemy import (
     EstanciaRepositorioSQLAlchemy,
 )
-
 from app.modulos.estancias.presentacion.esquemas_estancia import (
     EntradaEstanciaCrear,
     EstanciaRespuesta,
-    SalidaEstanciaSolicitud,
     SalidaEstanciaRespuesta,
+    SalidaEstanciaSolicitud,
 )
 
 router = APIRouter(

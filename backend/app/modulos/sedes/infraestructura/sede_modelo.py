@@ -1,9 +1,8 @@
 
 from uuid import UUID, uuid4
 
-from sqlalchemy import Integer, String, Time
+from sqlalchemy import Integer, String, Time, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Uuid
 
 from app.infraestructura.base_datos.conexion import Base
 

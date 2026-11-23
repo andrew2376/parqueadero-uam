@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
@@ -37,7 +36,7 @@ class EstanciaModelo(Base):
         nullable=False,
     )
 
-    fecha_hora_salida: Mapped[Optional[datetime]] = mapped_column(
+    fecha_hora_salida: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
