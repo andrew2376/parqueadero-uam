@@ -35,7 +35,11 @@ class LectorLPRSimulado(LectorLPRPuerto):
 
     def capturar_lectura(self, carril_id: UUID) -> LecturaLPR:
         placa = self.placa_fija or random.choice(self.PLACAS_DEMO)
-        confianza = self.confianza_fija if self.confianza_fija is not None else round(random.uniform(85.0, 99.5), 1)
+        confianza = (
+            self.confianza_fija
+            if self.confianza_fija is not None
+            else round(random.uniform(85.0, 99.5), 1)
+        )
 
         return LecturaLPR(
             carril_id=carril_id,

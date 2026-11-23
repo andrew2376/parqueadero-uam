@@ -1,4 +1,3 @@
-
 from sqlalchemy.orm import Session
 
 from app.modulos.pagos.dominio.pago import Pago
@@ -7,7 +6,6 @@ from app.modulos.pagos.infraestructura.pago_modelo import PagoModelo
 
 
 class PagoRepositorioSQLAlchemy(PagoRepositorio):
-
     def __init__(self, sesion: Session):
         self.sesion = sesion
 
@@ -17,9 +15,7 @@ class PagoRepositorioSQLAlchemy(PagoRepositorio):
     ) -> Pago | None:
         modelo = (
             self.sesion.query(PagoModelo)
-            .filter(
-                PagoModelo.clave_idempotencia == clave_idempotencia
-            )
+            .filter(PagoModelo.clave_idempotencia == clave_idempotencia)
             .first()
         )
 
@@ -32,11 +28,7 @@ class PagoRepositorioSQLAlchemy(PagoRepositorio):
         self,
         cobro_id,
     ) -> Pago | None:
-        modelo = (
-            self.sesion.query(PagoModelo)
-            .filter(PagoModelo.cobro_id == cobro_id)
-            .first()
-        )
+        modelo = self.sesion.query(PagoModelo).filter(PagoModelo.cobro_id == cobro_id).first()
 
         if modelo is None:
             return None
@@ -74,4 +66,3 @@ class PagoRepositorioSQLAlchemy(PagoRepositorio):
             fecha_hora_pago=modelo.fecha_hora_pago,
             clave_idempotencia=modelo.clave_idempotencia,
         )
-    

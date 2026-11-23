@@ -9,7 +9,9 @@ from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
 class RegistrarIngresoEsquema(BaseModel):
     sede_id: UUID
     carril_id: UUID
-    placa: str = Field(..., min_length=3, max_length=10, description="Placa del vehículo a ingresar")
+    placa: str = Field(
+        ..., min_length=3, max_length=10, description="Placa del vehículo a ingresar"
+    )
 
 
 class ResultadoIngresoEsquema(BaseModel):

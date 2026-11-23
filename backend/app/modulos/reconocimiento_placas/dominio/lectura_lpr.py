@@ -27,6 +27,7 @@ class LecturaLPR:
     Representa el resultado de una captura de placa por la cámara
     o ingresada manualmente por el operador.
     """
+
     carril_id: UUID
     placa: str
     confianza: float
@@ -34,9 +35,7 @@ class LecturaLPR:
     tipo_vehiculo: TipoVehiculo | None = None
     estado: EstadoLectura = EstadoLectura.EXITOSA
     id: UUID = field(default_factory=uuid4)
-    creado_en: datetime = field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    creado_en: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def __post_init__(self) -> None:
         self.placa = normalizar_placa(self.placa)

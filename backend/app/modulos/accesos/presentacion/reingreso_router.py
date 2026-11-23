@@ -36,4 +36,4 @@ def validar_reingreso(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
-        )
+        ) from error

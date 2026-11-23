@@ -1,14 +1,10 @@
-
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 from app.configuracion import obtener_configuracion
 from app.infraestructura.base_datos.modelos import Base
-
 
 # Configuración de Alembic
 config = context.config
@@ -21,10 +17,7 @@ if config.config_file_name is not None:
 configuracion = obtener_configuracion()
 
 # Utilizar la URL de conexión definida en el archivo .env
-config.set_main_option(
-    "sqlalchemy.url",
-    configuracion.url_base_datos.replace("%", "%%")
-)
+config.set_main_option("sqlalchemy.url", configuracion.url_base_datos.replace("%", "%%"))
 
 # Metadata de los modelos de SQLAlchemy
 target_metadata = Base.metadata

@@ -64,4 +64,4 @@ def registrar_pago_efectivo(
         raise HTTPException(
             status_code=codigo,
             detail=mensaje,
-        )
+        ) from error
