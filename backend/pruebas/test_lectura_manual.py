@@ -1,4 +1,5 @@
 from uuid import uuid4
+
 import pytest
 
 from app.modulos.reconocimiento_placas.aplicacion.casos_uso_lpr import (

@@ -1,25 +1,44 @@
-from fastapi import APIRouter, HTTPException, status
 
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.infraestructura.base_datos.conexion import obtener_sesion
+from app.modulos.carriles.infraestructura.carril_repositorio_sqlalchemy import (
+    CarrilRepositorioSQLAlchemy,
+)
+from app.modulos.eventos_lectura.aplicacion.registrar_evento_lectura import (
+    RegistrarEventoLectura,
+)
+from app.modulos.eventos_lectura.infraestructura.evento_lectura_repositorio_sqlalchemy import (
+    EventoLecturaRepositorioSQLAlchemy,
+)
 from app.modulos.reconocimiento_placas.aplicacion.casos_uso_lpr import (
+    RegistrarLecturaManual,
+    SimularLecturaPlaca,
     ValidarLecturaBajaConfianza,
 )
+from app.modulos.reconocimiento_placas.aplicacion.registrar_evento_desde_lpr import (
+    RegistrarEventoDesdeLPR,
+)
+from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado import (
+    LectorLPRSimulado,
+)
 from app.modulos.reconocimiento_placas.presentacion.esquemas_lpr import (
+    EventoLecturaRespuesta,
     LecturaLPREsquema,
+    LecturaManualSolicitud,
     ValidarLecturaManualSolicitud,
 )
 
 router = APIRouter(
-    prefix="/lpr",
-    tags=["Reconocimiento de Placas (LPR)"],
+    prefix="/lecturas-lpr",
+    tags=["Reconocimiento de placas LPR"],
 )
 
 
-@router.post(
-    "/validar-manual",
-    response_model=LecturaLPREsquema,
-    status_code=status.HTTP_200_OK,
-    summary="Validar y corregir lectura manual de baja confianza (S201)",
-)
 def validar_lectura_manual(
     datos: ValidarLecturaManualSolicitud,
 ) -> LecturaLPREsquema:
@@ -52,42 +71,6 @@ def validar_lectura_manual(
         operador_id=resultado.operador_id,
         requiere_confirmacion_manual=resultado.requiere_confirmacion_manual,
     )
-
-from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
-
-from app.infraestructura.base_datos.conexion import obtener_sesion
-from app.modulos.carriles.infraestructura.carril_repositorio_sqlalchemy import (
-    CarrilRepositorioSQLAlchemy,
-)
-from app.modulos.eventos_lectura.aplicacion.registrar_evento_lectura import (
-    RegistrarEventoLectura,
-)
-from app.modulos.eventos_lectura.infraestructura.evento_lectura_repositorio_sqlalchemy import (
-    EventoLecturaRepositorioSQLAlchemy,
-)
-from app.modulos.reconocimiento_placas.aplicacion.casos_uso_lpr import (
-    RegistrarLecturaManual,
-    SimularLecturaPlaca,
-)
-from app.modulos.reconocimiento_placas.aplicacion.registrar_evento_desde_lpr import (
-    RegistrarEventoDesdeLPR,
-)
-from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado import (
-    LectorLPRSimulado,
-)
-from app.modulos.reconocimiento_placas.presentacion.esquemas_lpr import (
-    EventoLecturaRespuesta,
-    LecturaManualSolicitud,
-)
-
-router = APIRouter(
-    prefix="/lecturas-lpr",
-    tags=["Reconocimiento de placas LPR"],
-)
 
 
 def construir_registrador_eventos(sesion: Session):

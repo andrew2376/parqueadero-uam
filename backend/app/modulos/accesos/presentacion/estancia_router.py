@@ -60,4 +60,4 @@ def registrar_entrada(
         raise HTTPException(
             status_code=codigo,
             detail=mensaje,
-        )
+        ) from error
