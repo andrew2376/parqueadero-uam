@@ -1,4 +1,3 @@
-
 from datetime import UTC
 from uuid import UUID
 
@@ -6,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modulos.eventos_lectura.dominio.evento_lectura import (
-    EventoLectura,
     EstadoEventoLectura,
+    EventoLectura,
     OrigenEventoLectura,
 )
 from app.modulos.eventos_lectura.dominio.evento_lectura_repositorio import (
@@ -19,7 +18,6 @@ from app.modulos.eventos_lectura.infraestructura.evento_lectura_modelo import (
 
 
 class EventoLecturaRepositorioSQLAlchemy(EventoLecturaRepositorio):
-
     def __init__(self, sesion: Session):
         self.sesion = sesion
 
@@ -58,10 +56,7 @@ class EventoLecturaRepositorioSQLAlchemy(EventoLecturaRepositorio):
 
         modelos = self.sesion.scalars(consulta).all()
 
-        return [
-            self._convertir_a_dominio(modelo)
-            for modelo in modelos
-        ]
+        return [self._convertir_a_dominio(modelo) for modelo in modelos]
 
     @staticmethod
     def _convertir_a_dominio(

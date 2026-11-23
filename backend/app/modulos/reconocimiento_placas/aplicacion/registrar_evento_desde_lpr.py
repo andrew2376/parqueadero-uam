@@ -1,4 +1,3 @@
-
 from app.modulos.carriles.dominio.carril_repositorio import (
     CarrilRepositorio,
 )
@@ -6,8 +5,8 @@ from app.modulos.eventos_lectura.aplicacion.registrar_evento_lectura import (
     RegistrarEventoLectura,
 )
 from app.modulos.eventos_lectura.dominio.evento_lectura import (
-    EventoLectura,
     EstadoEventoLectura,
+    EventoLectura,
     OrigenEventoLectura,
 )
 from app.modulos.reconocimiento_placas.dominio.lectura_lpr import (

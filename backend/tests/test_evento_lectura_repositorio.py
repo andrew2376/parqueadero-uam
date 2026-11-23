@@ -1,4 +1,3 @@
-
 from datetime import time
 from uuid import uuid4
 
@@ -9,15 +8,12 @@ from sqlalchemy.pool import StaticPool
 from app.infraestructura.base_datos.conexion import Base
 from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 from app.modulos.eventos_lectura.dominio.evento_lectura import (
-    EventoLectura,
     EstadoEventoLectura,
+    EventoLectura,
     OrigenEventoLectura,
 )
 from app.modulos.eventos_lectura.infraestructura.evento_lectura_repositorio_sqlalchemy import (
     EventoLecturaRepositorioSQLAlchemy,
-)
-from app.modulos.eventos_lectura.infraestructura.evento_lectura_modelo import (
-    EventoLecturaModelo,
 )
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 

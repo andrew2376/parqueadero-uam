@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from uuid import UUID
 
@@ -8,7 +7,6 @@ from app.modulos.eventos_lectura.dominio.evento_lectura import (
 
 
 class EventoLecturaRepositorio(ABC):
-
     @abstractmethod
     def guardar(self, evento: EventoLectura) -> EventoLectura:
         """Persiste un nuevo evento de lectura."""

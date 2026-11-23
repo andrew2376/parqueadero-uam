@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,6 +13,9 @@ from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
 )
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
+)
+from app.modulos.autenticacion.presentacion.auth_router import (
+    router as router_auth,
 )
 from app.modulos.carriles.presentacion.carril_router import (
     router as router_carriles,
@@ -64,6 +66,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_ingreso,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_auth,
     prefix=configuracion.prefijo_api,
 )
 
