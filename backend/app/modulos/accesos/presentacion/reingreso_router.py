@@ -6,8 +6,8 @@ from app.modulos.accesos.aplicacion.validar_reingreso import (
     ValidarReingreso,
 )
 from app.modulos.accesos.presentacion.esquemas_reingreso import (
-    ReingresoSolicitud,
     ReingresoRespuesta,
+    ReingresoSolicitud,
 )
 
 router = APIRouter(
