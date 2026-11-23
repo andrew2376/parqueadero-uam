@@ -9,6 +9,7 @@ from app.modulos.accesos.dominio.ingreso import (
     RegistroIngreso,
     ResultadoIngreso,
 )
+from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 from app.modulos.vehiculos.dominio.vehiculo import (
     TipoVehiculo,
@@ -19,12 +20,15 @@ from app.modulos.vehiculos.dominio.vehiculo import (
 
 class RegistrarIngresoVehiculo:
     """
-    Caso de uso S113:
-    1. Normaliza y clasifica la placa (F-02 / RN-01).
-    2. Valida anti-passback (que el vehículo no esté ya adentro).
-    3. Valida reingreso con pase pagado del día (RN-05).
-    4. Valida disponibilidad de cupos por tipo de vehículo (RN-06).
-    5. Registra el ingreso y emite decisión de barrera (ABRIR / MANTENER_CERRADA).
+    Caso de uso S113 integrado con S202.
+
+    1. Normaliza y clasifica la placa.
+    2. Valida anti-passback.
+    3. Valida reingreso con pase pagado del día.
+    4. Bloquea la sede para controlar ingresos concurrentes.
+    5. Valida la disponibilidad por tipo de vehículo.
+    6. Registra la estancia en PostgreSQL.
+    7. Emite la decisión de barrera.
     """
 
     def __init__(self, repositorio: AccesoRepositorio, sesion: Session):
@@ -32,10 +36,16 @@ class RegistrarIngresoVehiculo:
         self.sesion = sesion
         self.validador_reingreso = ValidarReingreso(sesion)
 
-    def ejecutar(self, sede_id: UUID, carril_id: UUID, placa_raw: str) -> ResultadoIngreso:
+    def ejecutar(
+        self,
+        sede_id: UUID,
+        carril_id: UUID,
+        placa_raw: str,
+    ) -> ResultadoIngreso:
+
         placa = normalizar_placa(placa_raw)
 
-        # 1. Validar y clasificar formato de placa
+        # 1. Clasificar la placa.
         try:
             tipo_vehiculo = clasificar_placa(placa)
         except ValueError as e:
@@ -46,75 +56,185 @@ class RegistrarIngresoVehiculo:
                 placa=placa or placa_raw,
             )
 
-        # 2. Consultar sede y cupos totales
-        sede = self.sesion.get(SedeModelo, sede_id)
-        if sede is None:
-            return ResultadoIngreso(
-                autorizado=False,
-                decision_barrera=DecisionBarrera.MANTENER_CERRADA,
-                mensaje="La sede especificada no existe.",
+        try:
+            # 2. Validar que la sede exista.
+            sede = self.sesion.get(SedeModelo, sede_id)
+
+            if sede is None:
+                return ResultadoIngreso(
+                    autorizado=False,
+                    decision_barrera=DecisionBarrera.MANTENER_CERRADA,
+                    mensaje="La sede especificada no existe.",
+                    placa=placa,
+                    tipo_vehiculo=tipo_vehiculo,
+                )
+
+            # 3. Validar anti-passback del repositorio de accesos.
+            activo = self.repositorio.buscar_ingreso_activo_por_placa(
                 placa=placa,
-                tipo_vehiculo=tipo_vehiculo,
+                sede_id=sede_id,
             )
 
-        # 3. Validar Anti-Passback: el vehículo no puede ingresar si ya está adentro
-        activo = self.repositorio.buscar_ingreso_activo_por_placa(placa=placa, sede_id=sede_id)
-        if activo is not None:
-            return ResultadoIngreso(
-                autorizado=False,
-                decision_barrera=DecisionBarrera.MANTENER_CERRADA,
-                mensaje=f"Anti-passback: El vehículo con placa {placa} ya registra un ingreso activo en esta sede.",
+            if activo is not None:
+                return ResultadoIngreso(
+                    autorizado=False,
+                    decision_barrera=DecisionBarrera.MANTENER_CERRADA,
+                    mensaje=(
+                        f"Anti-passback: El vehículo con placa {placa} "
+                        "ya registra un ingreso activo en esta sede."
+                    ),
+                    placa=placa,
+                    tipo_vehiculo=tipo_vehiculo,
+                )
+
+            # 4. Validar reingreso autorizado.
+            reingreso_info = self.validador_reingreso.ejecutar(
                 placa=placa,
-                tipo_vehiculo=tipo_vehiculo,
+                sede_id=sede_id,
+            )
+            es_reingreso = reingreso_info.get("autorizado", False)
+
+            # 5. Bloquear la fila de la sede.
+            # El bloqueo permanece hasta el commit o rollback.
+            sede_bloqueada = (
+                self.sesion.query(SedeModelo)
+                .filter(SedeModelo.id == sede_id)
+                .with_for_update()
+                .first()
             )
 
-        # 4. Validar si es un reingreso con pase pagado
-        reingreso_info = self.validador_reingreso.ejecutar(placa=placa, sede_id=sede_id)
-        es_reingreso = reingreso_info.get("autorizado", False)
+            if sede_bloqueada is None:
+                self.sesion.rollback()
+                return ResultadoIngreso(
+                    autorizado=False,
+                    decision_barrera=DecisionBarrera.MANTENER_CERRADA,
+                    mensaje="La sede especificada no existe.",
+                    placa=placa,
+                    tipo_vehiculo=tipo_vehiculo,
+                )
 
-        # 5. Validar cupos por tipo de vehículo
-        cupos_maximos = sede.cupos_carro if tipo_vehiculo == TipoVehiculo.CARRO else sede.cupos_moto
-        ocupados = self.repositorio.contar_vehiculos_activos(
-            sede_id=sede_id, tipo_vehiculo=tipo_vehiculo
-        )
-        disponibles = cupos_maximos - ocupados
+            # 6. Comprobar anti-passback contra las estancias reales.
+            estancia_activa = (
+                self.sesion.query(EstanciaModelo)
+                .filter(
+                    EstanciaModelo.sede_id == sede_id,
+                    EstanciaModelo.placa == placa,
+                    EstanciaModelo.estado == "DENTRO",
+                    EstanciaModelo.fecha_hora_salida.is_(None),
+                )
+                .first()
+            )
 
-        if disponibles <= 0 and not es_reingreso:
+            if estancia_activa is not None:
+                self.sesion.rollback()
+                return ResultadoIngreso(
+                    autorizado=False,
+                    decision_barrera=DecisionBarrera.MANTENER_CERRADA,
+                    mensaje=(
+                        f"Anti-passback: El vehículo con placa {placa} "
+                        "ya registra una estancia activa en esta sede."
+                    ),
+                    placa=placa,
+                    tipo_vehiculo=tipo_vehiculo,
+                )
+
+            # 7. Consultar capacidad y ocupación real.
+            cupos_maximos = (
+                sede_bloqueada.cupos_carro
+                if tipo_vehiculo == TipoVehiculo.CARRO
+                else sede_bloqueada.cupos_moto
+            )
+
+            ocupados = (
+                self.sesion.query(EstanciaModelo)
+                .filter(
+                    EstanciaModelo.sede_id == sede_id,
+                    EstanciaModelo.tipo_vehiculo == tipo_vehiculo.value,
+                    EstanciaModelo.estado == "DENTRO",
+                    EstanciaModelo.fecha_hora_salida.is_(None),
+                )
+                .count()
+            )
+
+            disponibles = max(0, cupos_maximos - ocupados)
+
+            # El reingreso autorizado conserva la excepción de S113.
+            if disponibles <= 0 and not es_reingreso:
+                self.sesion.rollback()
+                return ResultadoIngreso(
+                    autorizado=False,
+                    decision_barrera=DecisionBarrera.MANTENER_CERRADA,
+                    mensaje=(
+                        f"Parqueadero lleno para "
+                        f"{tipo_vehiculo.value.lower()}s. "
+                        "Cupos disponibles: 0."
+                    ),
+                    placa=placa,
+                    tipo_vehiculo=tipo_vehiculo,
+                    es_reingreso=False,
+                    cupos_disponibles_restantes=0,
+                )
+
+            # 8. Crear la estancia que contabiliza S202.
+            nueva_estancia = EstanciaModelo(
+                sede_id=sede_id,
+                placa=placa,
+                tipo_vehiculo=tipo_vehiculo.value,
+                fecha_hora_salida=None,
+                estado="DENTRO",
+            )
+
+            self.sesion.add(nueva_estancia)
+            self.sesion.flush()
+
+            # 9. Calcular cupos restantes después del ingreso.
+            ocupados += 1
+            cupos_restantes = max(0, cupos_maximos - ocupados)
+
+            # 10. Confirmar la estancia y liberar el bloqueo.
+            self.sesion.commit()
+
+            # 11. Registrar el acceso conservando S113.
+            nuevo_ingreso = RegistroIngreso(
+                sede_id=sede_id,
+                carril_id=carril_id,
+                placa=placa,
+                tipo_vehiculo=tipo_vehiculo,
+                es_reingreso=es_reingreso,
+            )
+
+            self.repositorio.guardar_ingreso(nuevo_ingreso)
+
+            mensaje_exito = (
+                f"Reingreso autorizado para {placa} ({tipo_vehiculo.value}). Pase del día vigente."
+                if es_reingreso
+                else f"Ingreso autorizado para {placa} ({tipo_vehiculo.value}). Barrera abierta."
+            )
+
+            return ResultadoIngreso(
+                autorizado=True,
+                decision_barrera=DecisionBarrera.ABRIR,
+                mensaje=mensaje_exito,
+                placa=placa,
+                tipo_vehiculo=tipo_vehiculo,
+                es_reingreso=es_reingreso,
+                cupos_disponibles_restantes=cupos_restantes,
+                acceso_id=nuevo_ingreso.id,
+            )
+
+        except ValueError as e:
+            self.sesion.rollback()
+
             return ResultadoIngreso(
                 autorizado=False,
                 decision_barrera=DecisionBarrera.MANTENER_CERRADA,
-                mensaje=f"Parqueadero lleno para {tipo_vehiculo.value.lower()}s. Cupos disponibles: 0.",
+                mensaje=str(e),
                 placa=placa,
                 tipo_vehiculo=tipo_vehiculo,
                 es_reingreso=False,
                 cupos_disponibles_restantes=0,
             )
 
-        # 6. Registrar ingreso exitoso
-        nuevo_ingreso = RegistroIngreso(
-            sede_id=sede_id,
-            carril_id=carril_id,
-            placa=placa,
-            tipo_vehiculo=tipo_vehiculo,
-            es_reingreso=es_reingreso,
-        )
-        self.repositorio.guardar_ingreso(nuevo_ingreso)
-
-        # Cupos restantes tras el ingreso
-        cupos_restantes = max(0, disponibles - (0 if es_reingreso else 1))
-        mensaje_exito = (
-            f"Reingreso autorizado para {placa} ({tipo_vehiculo.value}). Pase del día vigente."
-            if es_reingreso
-            else f"Ingreso autorizado para {placa} ({tipo_vehiculo.value}). Barrera abierta."
-        )
-
-        return ResultadoIngreso(
-            autorizado=True,
-            decision_barrera=DecisionBarrera.ABRIR,
-            mensaje=mensaje_exito,
-            placa=placa,
-            tipo_vehiculo=tipo_vehiculo,
-            es_reingreso=es_reingreso,
-            cupos_disponibles_restantes=cupos_restantes,
-            acceso_id=nuevo_ingreso.id,
-        )
+        except Exception:
+            self.sesion.rollback()
+            raise
