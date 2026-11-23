@@ -31,6 +31,8 @@ export class AuthService {
   public tieneRol(rolRequerido: string): boolean {
     const usuario = this.usuarioActualSubject.value;
     if (!usuario) return false;
+    // Administrador tiene jerarquía y acceso a todos los roles
+    if (usuario.rol === 'ADMINISTRADOR') return true;
     return usuario.rol === rolRequerido;
   }
 
