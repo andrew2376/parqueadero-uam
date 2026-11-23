@@ -1,7 +1,7 @@
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modulos.eventos_lectura.dominio.evento_lectura import (
@@ -57,6 +57,60 @@ class EventoLecturaRepositorioSQLAlchemy(EventoLecturaRepositorio):
         modelos = self.sesion.scalars(consulta).all()
 
         return [self._convertir_a_dominio(modelo) for modelo in modelos]
+
+    def listar_filtrado(
+        self,
+        placa: str | None = None,
+        sede_id: UUID | None = None,
+        estado: EstadoEventoLectura | None = None,
+        origen: OrigenEventoLectura | None = None,
+        fecha_desde: datetime | None = None,
+        fecha_hasta: datetime | None = None,
+        pagina: int = 1,
+        limite: int = 20,
+    ) -> tuple[list[EventoLectura], int]:
+
+        filtros = []
+
+        if placa:
+            filtros.append(EventoLecturaModelo.placa == placa.strip().upper())
+
+        if sede_id:
+            filtros.append(EventoLecturaModelo.sede_id == sede_id)
+
+        if estado:
+            filtros.append(EventoLecturaModelo.estado == estado.value)
+
+        if origen:
+            filtros.append(EventoLecturaModelo.origen == origen.value)
+
+        if fecha_desde:
+            filtros.append(EventoLecturaModelo.fecha_hora >= fecha_desde)
+
+        if fecha_hasta:
+            filtros.append(EventoLecturaModelo.fecha_hora <= fecha_hasta)
+
+        # Consultar el total de registros que cumplen los filtros
+        consulta_total = select(func.count(EventoLecturaModelo.id)).where(*filtros)
+
+        total = self.sesion.scalar(consulta_total) or 0
+
+        # Aplicar paginación
+        desplazamiento = (pagina - 1) * limite
+
+        consulta = (
+            select(EventoLecturaModelo)
+            .where(*filtros)
+            .order_by(EventoLecturaModelo.fecha_hora.desc())
+            .offset(desplazamiento)
+            .limit(limite)
+        )
+
+        modelos = self.sesion.scalars(consulta).all()
+
+        eventos = [self._convertir_a_dominio(modelo) for modelo in modelos]
+
+        return eventos, total
 
     @staticmethod
     def _convertir_a_dominio(

@@ -19,6 +19,9 @@ from app.modulos.estado.presentacion.rutas import router_estado
 from app.modulos.estancias.presentacion.estancia_router import (
     router as router_estancias,
 )
+from app.modulos.eventos_lectura.presentacion.evento_lectura_router import (
+    router as router_eventos_lectura,
+)
 from app.modulos.pagos.presentacion.pago_router import (
     router as router_pagos,
 )
@@ -86,6 +89,16 @@ aplicacion.include_router(
 )
 aplicacion.include_router(
     router_validacion_manual_lpr,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_estancias,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_eventos_lectura,
     prefix=configuracion.prefijo_api,
 )
 
