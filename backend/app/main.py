@@ -8,6 +8,9 @@ from app.infraestructura.base_datos import (  # noqa: F401
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )
+from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
+    router as router_lpr,
+)
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
 )
@@ -57,6 +60,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_ingreso,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_lpr,
     prefix=configuracion.prefijo_api,
 )
 
