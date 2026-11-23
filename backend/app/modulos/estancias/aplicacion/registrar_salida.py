@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -6,6 +6,7 @@ from app.modulos.cobros.infraestructura.cobro_modelo import CobroModelo
 from app.modulos.estancias.dominio.estancia_repositorio import EstanciaRepositorio
 from app.modulos.pagos.infraestructura.pago_modelo import PagoModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
+from app.modulos.tarifas.dominio.franja_horaria import calcular_dia_operativo
 from app.modulos.vehiculos.dominio.vehiculo import normalizar_placa
 
 
@@ -15,7 +16,6 @@ class RegistrarSalida:
         self.sesion = sesion
 
     def ejecutar(self, placa: str, sede_id: UUID) -> dict:
-
         placa_normalizada = normalizar_placa(placa)
 
         # 1. Buscar estancia activa
@@ -48,17 +48,11 @@ class RegistrarSalida:
         zona_horaria = ZoneInfo(sede.zona_horaria)
         ahora = datetime.now(zona_horaria)
 
-        inicio_dia = ahora.replace(
-            hour=sede.inicio_dia_operativo.hour,
-            minute=sede.inicio_dia_operativo.minute,
-            second=sede.inicio_dia_operativo.second,
-            microsecond=0,
+        dia_operativo = calcular_dia_operativo(
+            fecha_hora=ahora,
+            zona_horaria=sede.zona_horaria,
+            inicio_dia_operativo=sede.inicio_dia_operativo,
         )
-
-        if ahora < inicio_dia:
-            dia_operativo = ahora.date() - timedelta(days=1)
-        else:
-            dia_operativo = ahora.date()
 
         # 3. Buscar cobro del día operativo
         cobro = (
