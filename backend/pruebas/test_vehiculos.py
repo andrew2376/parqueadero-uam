@@ -13,7 +13,6 @@ from app.modulos.vehiculos.dominio.vehiculo import (
 
 
 class TestClasificacionPlacas:
-
     @pytest.mark.parametrize(
         "placa, tipo_esperado",
         [

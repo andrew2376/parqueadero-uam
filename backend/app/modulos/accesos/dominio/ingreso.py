@@ -7,7 +7,7 @@ from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
 
 
 class EstadoAcceso(str, Enum):
-    ACTIVO = "ACTIVO"      # Vehículo dentro del parqueadero
+    ACTIVO = "ACTIVO"  # Vehículo dentro del parqueadero
     FINALIZADO = "FINALIZADO"  # Vehículo salió del parqueadero
 
 
@@ -21,14 +21,13 @@ class RegistroIngreso:
     """
     Entidad de dominio que representa el ingreso de un vehículo al parqueadero.
     """
+
     sede_id: UUID
     carril_id: UUID
     placa: str
     tipo_vehiculo: TipoVehiculo
     id: UUID = field(default_factory=uuid4)
-    fecha_ingreso: datetime = field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    fecha_ingreso: datetime = field(default_factory=lambda: datetime.now(UTC))
     estado: EstadoAcceso = EstadoAcceso.ACTIVO
     fecha_salida: datetime | None = None
     es_reingreso: bool = False
@@ -45,6 +44,7 @@ class ResultadoIngreso:
     """
     Resultado de la evaluación y registro del intento de ingreso.
     """
+
     autorizado: bool
     decision_barrera: DecisionBarrera
     mensaje: str

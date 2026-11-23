@@ -4,7 +4,6 @@ from app.modulos.vehiculos.dominio.vehiculo import Vehiculo
 
 
 class VehiculoRepositorio(ABC):
-
     @abstractmethod
     def buscar_por_placa(self, placa: str) -> Vehiculo | None:
         """Busca un vehículo previamente registrado por su placa."""

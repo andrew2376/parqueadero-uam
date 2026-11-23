@@ -6,7 +6,6 @@ from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
 
 
 class AccesoRepositorio(ABC):
-
     @abstractmethod
     def guardar_ingreso(self, ingreso: RegistroIngreso) -> RegistroIngreso:
         """Guarda o actualiza un registro de ingreso."""

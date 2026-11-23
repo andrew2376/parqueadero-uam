@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from uuid import UUID
 
@@ -6,7 +5,6 @@ from app.modulos.carriles.dominio.carril import Carril
 
 
 class CarrilRepositorio(ABC):
-
     @abstractmethod
     def guardar(self, carril: Carril) -> Carril:
         """Guarda un carril nuevo."""

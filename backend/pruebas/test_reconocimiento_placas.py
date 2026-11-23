@@ -18,7 +18,6 @@ from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
 
 
 class TestReconocimientoPlacasLPR:
-
     def setup_method(self):
         self.carril_id = uuid4()
 

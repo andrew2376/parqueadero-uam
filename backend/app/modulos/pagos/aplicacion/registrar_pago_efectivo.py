@@ -11,7 +11,6 @@ from app.modulos.pagos.dominio.pago_repositorio import PagoRepositorio
 
 
 class RegistrarPagoEfectivo:
-
     def __init__(
         self,
         repositorio: PagoRepositorio,
@@ -36,27 +35,16 @@ class RegistrarPagoEfectivo:
             raise ValueError("El valor del pago debe ser mayor que cero.")
 
         # Si la misma solicitud ya fue procesada, devolver el pago existente.
-        pago_existente = (
-            self.repositorio.buscar_por_clave_idempotencia(
-                clave_idempotencia
-            )
-        )
+        pago_existente = self.repositorio.buscar_por_clave_idempotencia(clave_idempotencia)
 
         if pago_existente is not None:
             if pago_existente.cobro_id != cobro_id:
-                raise ValueError(
-                    "La clave de idempotencia ya fue utilizada "
-                    "para otro cobro."
-                )
+                raise ValueError("La clave de idempotencia ya fue utilizada para otro cobro.")
 
             return pago_existente
 
         # Verificar que el cobro exista.
-        cobro = (
-            self.sesion.query(CobroModelo)
-            .filter(CobroModelo.id == cobro_id)
-            .first()
-        )
+        cobro = self.sesion.query(CobroModelo).filter(CobroModelo.id == cobro_id).first()
 
         if cobro is None:
             raise ValueError("El cobro no existe.")
@@ -71,9 +59,7 @@ class RegistrarPagoEfectivo:
         valor_cobro = Decimal(str(cobro.valor_tarifa))
 
         if valor != valor_cobro:
-            raise ValueError(
-                "El valor del pago no coincide con el valor del cobro."
-            )
+            raise ValueError("El valor del pago no coincide con el valor del cobro.")
 
         pago = Pago(
             id=uuid4(),
@@ -91,23 +77,17 @@ class RegistrarPagoEfectivo:
             # Una petición concurrente pudo registrar el pago primero.
             self.sesion.rollback()
 
-            pago_existente = (
-                self.repositorio.buscar_por_clave_idempotencia(
-                    clave_idempotencia
-                )
-            )
+            pago_existente = self.repositorio.buscar_por_clave_idempotencia(clave_idempotencia)
 
             if pago_existente is not None:
                 if pago_existente.cobro_id == cobro_id:
                     return pago_existente
 
-                raise ValueError(
-                    "La clave de idempotencia ya fue utilizada."
-                )
+                raise ValueError("La clave de idempotencia ya fue utilizada.") from None
 
             pago_existente = self.repositorio.buscar_por_cobro(cobro_id)
 
             if pago_existente is not None:
-                raise ValueError("Este cobro ya se encuentra pagado.")
+                raise ValueError("Este cobro ya se encuentra pagado.") from None
 
             raise

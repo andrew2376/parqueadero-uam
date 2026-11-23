@@ -1,11 +1,9 @@
-
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.configuracion import obtener_configuracion
-
 
 # Obtener la configuración de la aplicación
 configuracion = obtener_configuracion()
