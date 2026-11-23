@@ -1,4 +1,3 @@
-
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
@@ -25,7 +24,11 @@ ZONA = "America/Bogota"
 )
 def test_determinar_franja_horaria(hora, franja):
     fecha = datetime(
-        2026, 11, 23, hora, 0,
+        2026,
+        11,
+        23,
+        hora,
+        0,
         tzinfo=ZoneInfo(ZONA),
     )
 

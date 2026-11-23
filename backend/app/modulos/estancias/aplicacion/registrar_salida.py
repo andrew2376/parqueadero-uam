@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -77,11 +76,7 @@ class RegistrarSalida:
             }
 
         # 4. Verificar pago
-        pago = (
-            self.sesion.query(PagoModelo)
-            .filter(PagoModelo.cobro_id == cobro.id)
-            .first()
-        )
+        pago = self.sesion.query(PagoModelo).filter(PagoModelo.cobro_id == cobro.id).first()
 
         if pago is None:
             return {
