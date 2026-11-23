@@ -24,6 +24,10 @@ jobs:
     name: Backend Quality
     runs-on: ubuntu-latest
 
+    env:
+      URL_BASE_DATOS: "postgresql+psycopg://ci:ci@localhost:5432/parqueadero_ci"
+      SECRETO_JWT: "clave_temporal_para_pruebas_ci_123456789"
+
     defaults:
       run:
         working-directory: backend
