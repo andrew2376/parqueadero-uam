@@ -19,6 +19,9 @@ from app.modulos.estado.presentacion.rutas import router_estado
 from app.modulos.estancias.presentacion.estancia_router import (
     router as router_estancias,
 )
+from app.modulos.eventos_lectura.presentacion.evento_lectura_router import (
+    router as router_eventos_lectura,
+)
 from app.modulos.pagos.presentacion.pago_router import (
     router as router_pagos,
 )
@@ -27,10 +30,6 @@ from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
 )
 from app.modulos.reconocimiento_placas.presentacion.validacion_manual_router import (
     router as router_validacion_manual_lpr,
-)
-
-from app.modulos.eventos_lectura.presentacion.evento_lectura_router import (
-    router as router_eventos_lectura,
 )
 
 configuracion = obtener_configuracion()
