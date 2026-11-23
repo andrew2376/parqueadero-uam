@@ -8,11 +8,11 @@ from app.infraestructura.base_datos import (  # noqa: F401
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )
-from app.modulos.autenticacion.presentacion.auth_router import (
-    router as router_auth,
-)
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
+)
+from app.modulos.autenticacion.presentacion.auth_router import (
+    router as router_auth,
 )
 from app.modulos.carriles.presentacion.carril_router import (
     router as router_carriles,
@@ -20,6 +20,9 @@ from app.modulos.carriles.presentacion.carril_router import (
 from app.modulos.estado.presentacion.rutas import router_estado
 from app.modulos.pagos.presentacion.pago_router import (
     router as router_pagos,
+)
+from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
+    router as router_lpr,
 )
 
 configuracion = obtener_configuracion()
@@ -65,6 +68,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_auth,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_lpr,
     prefix=configuracion.prefijo_api,
 )
 
