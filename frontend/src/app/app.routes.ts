@@ -7,14 +7,23 @@ import { authGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: '', redirectTo: 'panel', pathMatch: 'full' },
-  { path: 'panel', component: PanelComponent, canActivate: [authGuard] },
-  { path: 'ingreso', component: ControlIngresoComponent, canActivate: [authGuard] },
+  {
+    path: 'panel',
+    component: PanelComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ingreso',
+    component: ControlIngresoComponent,
+    canActivate: [authGuard]
+  },
   {
     path: 'carriles',
     loadComponent: () =>
       import('./funcionalidades/carriles/paginas/gestion-carriles/gestion-carriles')
         .then(m => m.GestionCarriles),
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' }
   },
   { path: '**', redirectTo: 'panel' }
 ];
