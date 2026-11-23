@@ -73,9 +73,7 @@ class EventoLecturaRepositorioSQLAlchemy(EventoLecturaRepositorio):
         filtros = []
 
         if placa:
-            filtros.append(
-                EventoLecturaModelo.placa == placa.strip().upper()
-            )
+            filtros.append(EventoLecturaModelo.placa == placa.strip().upper())
 
         if sede_id:
             filtros.append(EventoLecturaModelo.sede_id == sede_id)
@@ -93,9 +91,7 @@ class EventoLecturaRepositorioSQLAlchemy(EventoLecturaRepositorio):
             filtros.append(EventoLecturaModelo.fecha_hora <= fecha_hasta)
 
         # Consultar el total de registros que cumplen los filtros
-        consulta_total = select(
-            func.count(EventoLecturaModelo.id)
-        ).where(*filtros)
+        consulta_total = select(func.count(EventoLecturaModelo.id)).where(*filtros)
 
         total = self.sesion.scalar(consulta_total) or 0
 
@@ -112,10 +108,7 @@ class EventoLecturaRepositorioSQLAlchemy(EventoLecturaRepositorio):
 
         modelos = self.sesion.scalars(consulta).all()
 
-        eventos = [
-            self._convertir_a_dominio(modelo)
-            for modelo in modelos
-        ]
+        eventos = [self._convertir_a_dominio(modelo) for modelo in modelos]
 
         return eventos, total
 
