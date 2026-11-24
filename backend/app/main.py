@@ -55,7 +55,6 @@ from app.modulos.tarifas.presentacion.tarifa_router import (
     router_tarifas,
 )
 
-
 configuracion = obtener_configuracion()
 
 

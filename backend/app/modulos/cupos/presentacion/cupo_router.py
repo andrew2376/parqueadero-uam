@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
+from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
+from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
 from app.modulos.cupos.aplicacion.actualizar_capacidades import ActualizarCapacidades
 from app.modulos.cupos.aplicacion.consultar_disponibilidad import ConsultarDisponibilidad
 from app.modulos.cupos.infraestructura.cupo_repositorio_sqlalchemy import (
@@ -15,13 +17,6 @@ from app.modulos.cupos.presentacion.esquemas_cupo import (
     CapacidadesRespuesta,
     CupoRespuesta,
 )
-
-# IMPORTANTE:
-# Utiliza aquí los mismos imports de autenticación
-# que tienes en carril_router.py.
-from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
-from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
-
 
 router = APIRouter(
     prefix="/cupos",
