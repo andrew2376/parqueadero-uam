@@ -31,7 +31,11 @@ from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
 from app.modulos.reconocimiento_placas.presentacion.validacion_manual_router import (
     router as router_validacion_manual_lpr,
 )
+from app.modulos.auditoria.presentacion.auditoria_router import (
+    router as router_auditoria,
+)
 
+from app.infraestructura.base_datos import modelos as modelos_registrados  # noqa: F401
 configuracion = obtener_configuracion()
 
 aplicacion = FastAPI(
@@ -99,6 +103,16 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_eventos_lectura,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_eventos_lectura,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_auditoria,
     prefix=configuracion.prefijo_api,
 )
 
