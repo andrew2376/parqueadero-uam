@@ -3,11 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import obtener_configuracion
 from app.infraestructura.base_datos import modelos as modelos_registrados  # noqa: F401
+
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
+)
+from app.modulos.auditoria.presentacion.auditoria_router import (
+    router as router_auditoria,
 )
 from app.modulos.autenticacion.presentacion.auth_router import (
     router as router_auth,
@@ -31,11 +35,10 @@ from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
 from app.modulos.reconocimiento_placas.presentacion.validacion_manual_router import (
     router as router_validacion_manual_lpr,
 )
-from app.modulos.auditoria.presentacion.auditoria_router import (
-    router as router_auditoria,
+from app.modulos.tarifas.presentacion.tarifa_router import (
+    router_tarifas,
 )
 
-from app.infraestructura.base_datos import modelos as modelos_registrados  # noqa: F401
 configuracion = obtener_configuracion()
 
 aplicacion = FastAPI(
@@ -52,65 +55,74 @@ aplicacion.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Estado
 aplicacion.include_router(
     router_estado,
     prefix=configuracion.prefijo_api,
 )
 
+# Carriles
 aplicacion.include_router(
     router_carriles,
     prefix=configuracion.prefijo_api,
 )
 
+# Tarifas
+aplicacion.include_router(
+    router_tarifas,
+    prefix=configuracion.prefijo_api,
+)
+
+# Pagos
 aplicacion.include_router(
     router_pagos,
     prefix=configuracion.prefijo_api,
 )
 
+# Accesos
 aplicacion.include_router(
     router_accesos,
     prefix=configuracion.prefijo_api,
 )
 
+# Estancias
 aplicacion.include_router(
     router_estancias,
     prefix=configuracion.prefijo_api,
 )
 
+# Ingreso
 aplicacion.include_router(
     router_ingreso,
     prefix=configuracion.prefijo_api,
 )
 
+# Autenticación
 aplicacion.include_router(
     router_auth,
     prefix=configuracion.prefijo_api,
 )
 
+# Reconocimiento de placas (LPR)
 aplicacion.include_router(
     router_lpr,
     prefix=configuracion.prefijo_api,
 )
+
+# Validación manual de placas
 aplicacion.include_router(
     router_validacion_manual_lpr,
     prefix=configuracion.prefijo_api,
 )
 
-aplicacion.include_router(
-    router_estancias,
-    prefix=configuracion.prefijo_api,
-)
-
+# Eventos de lectura
 aplicacion.include_router(
     router_eventos_lectura,
     prefix=configuracion.prefijo_api,
 )
 
-aplicacion.include_router(
-    router_eventos_lectura,
-    prefix=configuracion.prefijo_api,
-)
-
+# Auditoría
 aplicacion.include_router(
     router_auditoria,
     prefix=configuracion.prefijo_api,

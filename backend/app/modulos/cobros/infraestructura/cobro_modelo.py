@@ -2,7 +2,15 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infraestructura.base_datos.conexion import Base
@@ -27,6 +35,16 @@ class CobroModelo(Base):
 
     sede_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("sedes.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+
+    tarifa_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tarifas.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+
+    version_tarifa: Mapped[int] = mapped_column(
+        Integer,
         nullable=False,
     )
 

@@ -17,7 +17,6 @@ class EstanciaRepositorioSQLAlchemy(EstanciaRepositorio):
         placa: str,
         sede_id: UUID,
     ) -> Estancia | None:
-
         modelo = (
             self.sesion.query(EstanciaModelo)
             .filter(
@@ -38,7 +37,6 @@ class EstanciaRepositorioSQLAlchemy(EstanciaRepositorio):
         self,
         estancia: Estancia,
     ) -> Estancia:
-
         modelo = EstanciaModelo(
             sede_id=estancia.sede_id,
             placa=estancia.placa,
@@ -51,18 +49,13 @@ class EstanciaRepositorioSQLAlchemy(EstanciaRepositorio):
         self.sesion.add(modelo)
         self.sesion.flush()
 
-        estancia_registrada = self._convertir_a_dominio(modelo)
-
-        self.sesion.commit()
-
-        return estancia_registrada
+        return self._convertir_a_dominio(modelo)
 
     def registrar_salida(
         self,
         estancia_id: UUID,
         fecha_hora_salida: datetime,
     ) -> bool:
-
         resultado = (
             self.sesion.query(EstanciaModelo)
             .filter(
@@ -90,7 +83,6 @@ class EstanciaRepositorioSQLAlchemy(EstanciaRepositorio):
     def _convertir_a_dominio(
         modelo: EstanciaModelo,
     ) -> Estancia:
-
         return Estancia(
             id=modelo.id,
             sede_id=modelo.sede_id,

@@ -1,10 +1,13 @@
 import uuid
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    DateTime,
     ForeignKey,
+    Index,
     Numeric,
     String,
     UniqueConstraint,
@@ -21,7 +24,8 @@ class TarifaModelo(Base):
         UniqueConstraint(
             "sede_id",
             "tipo_vehiculo",
-            name="uq_tarifa_sede_tipo_vehiculo",
+            "version",
+            name="uq_tarifa_sede_tipo_version",
         ),
         CheckConstraint(
             "tipo_vehiculo IN ('CARRO', 'MOTO')",
@@ -36,6 +40,21 @@ class TarifaModelo(Base):
             "AND tarifa_nocturna = 0) "
             "OR tarifa_nocturna < tarifa_diurna",
             name="ck_tarifa_nocturna_menor_diurna",
+        ),
+        CheckConstraint(
+            "version >= 1",
+            name="ck_tarifa_version_positiva",
+        ),
+        CheckConstraint(
+            "vigencia_hasta IS NULL OR vigencia_hasta > vigencia_desde",
+            name="ck_tarifa_vigencia_valida",
+        ),
+        Index(
+            "ix_tarifa_busqueda_vigencia",
+            "sede_id",
+            "tipo_vehiculo",
+            "vigencia_desde",
+            "vigencia_hasta",
         ),
     )
 
@@ -54,6 +73,11 @@ class TarifaModelo(Base):
         nullable=False,
     )
 
+    version: Mapped[int] = mapped_column(
+        nullable=False,
+        default=1,
+    )
+
     tarifa_diurna: Mapped[Decimal] = mapped_column(
         Numeric(12, 2),
         nullable=False,
@@ -64,6 +88,18 @@ class TarifaModelo(Base):
         Numeric(12, 2),
         nullable=False,
         default=Decimal("0"),
+    )
+
+    vigencia_desde: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+    )
+
+    vigencia_hasta: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
     )
 
     activa: Mapped[bool] = mapped_column(

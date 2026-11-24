@@ -33,6 +33,7 @@ def registrar_entrada(
 
     caso_uso = RegistrarEntrada(
         repositorio=repositorio,
+        sesion=sesion,
     )
 
     try:
@@ -42,21 +43,24 @@ def registrar_entrada(
             tipo_vehiculo=datos.tipo_vehiculo,
         )
 
-        return {
-            "id": estancia.id,
-            "sede_id": estancia.sede_id,
-            "placa": estancia.placa,
-            "tipo_vehiculo": estancia.tipo_vehiculo,
-            "fecha_hora_entrada": estancia.fecha_hora_entrada,
-            "fecha_hora_salida": estancia.fecha_hora_salida,
-            "estado": estancia.estado,
-        }
+        return EstanciaRespuesta(
+            id=estancia.id,
+            sede_id=estancia.sede_id,
+            placa=estancia.placa,
+            tipo_vehiculo=estancia.tipo_vehiculo,
+            fecha_hora_entrada=estancia.fecha_hora_entrada,
+            fecha_hora_salida=estancia.fecha_hora_salida,
+            estado=estancia.estado,
+        )
 
     except ValueError as error:
         mensaje = str(error)
+        mensaje_lower = mensaje.lower()
 
-        if "activa" in mensaje.lower():
+        if "activa" in mensaje_lower or "cupos disponibles" in mensaje_lower:
             codigo = status.HTTP_409_CONFLICT
+        elif "no existe" in mensaje_lower:
+            codigo = status.HTTP_404_NOT_FOUND
         else:
             codigo = status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -82,7 +86,13 @@ def registrar_salida(
         sesion=sesion,
     )
 
-    return caso_uso.ejecutar(
-        placa=datos.placa,
-        sede_id=datos.sede_id,
-    )
+    try:
+        return caso_uso.ejecutar(
+            placa=datos.placa,
+            sede_id=datos.sede_id,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
