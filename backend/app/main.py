@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -31,6 +32,9 @@ from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
 from app.modulos.reconocimiento_placas.presentacion.validacion_manual_router import (
     router as router_validacion_manual_lpr,
 )
+from app.modulos.tarifas.presentacion.tarifa_router import (
+    router_tarifas,
+)
 
 configuracion = obtener_configuracion()
 
@@ -48,6 +52,7 @@ aplicacion.add_middleware(
     allow_headers=["*"],
 )
 
+
 aplicacion.include_router(
     router_estado,
     prefix=configuracion.prefijo_api,
@@ -55,6 +60,11 @@ aplicacion.include_router(
 
 aplicacion.include_router(
     router_carriles,
+    prefix=configuracion.prefijo_api,
+)
+
+aplicacion.include_router(
+    router_tarifas,
     prefix=configuracion.prefijo_api,
 )
 
@@ -87,13 +97,9 @@ aplicacion.include_router(
     router_lpr,
     prefix=configuracion.prefijo_api,
 )
-aplicacion.include_router(
-    router_validacion_manual_lpr,
-    prefix=configuracion.prefijo_api,
-)
 
 aplicacion.include_router(
-    router_estancias,
+    router_validacion_manual_lpr,
     prefix=configuracion.prefijo_api,
 )
 

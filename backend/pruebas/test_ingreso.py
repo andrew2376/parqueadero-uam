@@ -1,4 +1,6 @@
+
 from datetime import time
+from unittest.mock import patch
 from uuid import uuid4
 
 from app.modulos.accesos.aplicacion.registrar_ingreso import RegistrarIngresoVehiculo
@@ -8,6 +10,7 @@ from app.modulos.accesos.dominio.ingreso import (
     EstadoAcceso,
     RegistroIngreso,
 )
+from app.modulos.cobros.aplicacion.generar_cobro import GenerarCobro
 from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
@@ -21,7 +24,11 @@ class AccesoRepositorioEnMemoria(AccesoRepositorio):
         self.ingresos.append(ingreso)
         return ingreso
 
-    def buscar_ingreso_activo_por_placa(self, placa: str, sede_id) -> RegistroIngreso | None:
+    def buscar_ingreso_activo_por_placa(
+        self,
+        placa: str,
+        sede_id,
+    ) -> RegistroIngreso | None:
         for ingreso in self.ingresos:
             if (
                 ingreso.placa == placa
@@ -31,7 +38,11 @@ class AccesoRepositorioEnMemoria(AccesoRepositorio):
                 return ingreso
         return None
 
-    def contar_vehiculos_activos(self, sede_id, tipo_vehiculo: TipoVehiculo) -> int:
+    def contar_vehiculos_activos(
+        self,
+        sede_id,
+        tipo_vehiculo: TipoVehiculo,
+    ) -> int:
         return sum(
             1
             for ingreso in self.ingresos
@@ -47,6 +58,9 @@ class MockQuery:
         self.entidad = entidad
 
     def filter(self, *args, **kwargs):
+        return self
+
+    def order_by(self, *args, **kwargs):
         return self
 
     def with_for_update(self):
@@ -109,10 +123,21 @@ class TestCasoUsoIngreso:
         self.repositorio = AccesoRepositorioEnMemoria()
         self.sesion = MockSession(self.sede)
 
+        # Aislar la generación de cobros en las pruebas de ingreso.
+        self.parche_generar_cobro = patch.object(
+            GenerarCobro,
+            "ejecutar",
+            return_value=None,
+        )
+        self.parche_generar_cobro.start()
+
         self.caso_ingreso = RegistrarIngresoVehiculo(
             repositorio=self.repositorio,
             sesion=self.sesion,
         )
+
+    def teardown_method(self):
+        self.parche_generar_cobro.stop()
 
     def test_ingreso_exitoso_carro(self):
         resultado = self.caso_ingreso.ejecutar(
@@ -163,11 +188,23 @@ class TestCasoUsoIngreso:
 
     def test_cupos_agotados_bloquea_ingreso(self):
         # Llenar los dos cupos de carro.
-        self.caso_ingreso.ejecutar(self.sede_id, self.carril_id, "ABC123")
-        self.caso_ingreso.ejecutar(self.sede_id, self.carril_id, "XYZ789")
+        self.caso_ingreso.ejecutar(
+            self.sede_id,
+            self.carril_id,
+            "ABC123",
+        )
+        self.caso_ingreso.ejecutar(
+            self.sede_id,
+            self.carril_id,
+            "XYZ789",
+        )
 
         # El tercer carro debe ser rechazado.
-        tercero = self.caso_ingreso.ejecutar(self.sede_id, self.carril_id, "UAM100")
+        tercero = self.caso_ingreso.ejecutar(
+            self.sede_id,
+            self.carril_id,
+            "UAM100",
+        )
 
         assert tercero.autorizado is False
         assert tercero.decision_barrera == DecisionBarrera.MANTENER_CERRADA
