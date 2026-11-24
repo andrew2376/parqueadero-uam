@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { LecturaPlaca, ResultadoAcceso } from '../models/acceso.model';
+import { API_BASE_URL } from '../api.config';
+import { ResultadoAcceso } from '../models/acceso.model';
+
+import { TipoVehiculo } from '../models/vehiculo.model';
 
 export interface SolicitudIngreso {
   carrilId: string;
@@ -11,10 +14,15 @@ export interface SolicitudIngreso {
   confianzaLectura?: number;
 }
 
-export interface PlacaSimulada {
-  placa: string;
-  tipo: 'CARRO' | 'MOTO';
+export type EscenarioSimulacion = 'alta' | 'baja' | 'sin-lectura';
+
+export interface LecturaSimulada {
+  id: string;
+  placa: string | null;
+  tipo_vehiculo: TipoVehiculo | null;
   confianza: number;
+  estado: 'EXITOSA' | 'BAJA_CONFIANZA' | 'FALLIDA';
+  requiere_confirmacion_manual: boolean;
 }
 
 export interface LecturaManualLPR {
@@ -50,27 +58,12 @@ export class IngresoService {
   public readonly sedeIdDefault = '03793b27-4b34-42ea-9bb0-28f8bc5b330d';
   public readonly carrilEntradaDefault = 'c1343f2e-20d6-4374-981c-fcb00d6130c2';
 
-  // Catálogo de placas demo para la simulación LPR académica
-  private readonly catalogoDemo: PlacaSimulada[] = [
-    { placa: 'ABC123', tipo: 'CARRO', confianza: 96 },
-    { placa: 'KLR65A', tipo: 'MOTO', confianza: 94 },
-    { placa: 'XYZ789', tipo: 'CARRO', confianza: 98 },
-    { placa: 'UAM001', tipo: 'CARRO', confianza: 99 },
-    { placa: 'MTO45B', tipo: 'MOTO', confianza: 88 },
-    { placa: 'DEF456', tipo: 'CARRO', confianza: 62 } // Lectura de baja confianza (<70%)
-  ];
-
-  private indiceDemo = 0;
-
   constructor(private http: HttpClient) {}
 
-  /**
-   * Simula la lectura automática de la cámara LPR
-   */
-  simularLectura(): PlacaSimulada {
-    const item = this.catalogoDemo[this.indiceDemo % this.catalogoDemo.length];
-    this.indiceDemo++;
-    return { ...item };
+  simularLectura(carrilId: string, escenario: EscenarioSimulacion): Observable<LecturaSimulada> {
+    return this.http.post<LecturaSimulada>(`${API_BASE_URL}/lecturas-lpr/simulacion`, null, {
+      params: { carril_id: carrilId, escenario }
+    });
   }
 
   /**
@@ -124,7 +117,7 @@ export class IngresoService {
    * Registra el ingreso en el backend (POST /api/v1/accesos/ingreso)
    * con soporte de fallback para desarrollo / demostración.
    */
-  registrarIngreso(solicitud: SolicitudIngreso): Observable<ResultadoAcceso> {
+  registrarIngreso(solicitud: SolicitudIngreso, desdeSimulacion = false): Observable<ResultadoAcceso> {
     const carrilReal = solicitud.carrilId || this.carrilEntradaDefault;
 
     return this.http.post<any>(`${this.apiUrl}/ingreso`, {
@@ -134,8 +127,8 @@ export class IngresoService {
     }).pipe(
       map(res => {
         const respuesta: ResultadoAcceso = {
-          permitido: res.autorizado,
-          estadoBarrera: res.decision_barrera === 'ABRIR' ? 'ABIERTA' : 'CERRADA',
+          permitido: desdeSimulacion ? res.autorizado === true && res.decision_barrera === 'ABRIR' : res.autorizado,
+          estadoBarrera: res.decision_barrera === 'ABRIR' && (!desdeSimulacion || res.autorizado === true) ? 'ABIERTA' : 'CERRADA',
           tipoVehiculo: res.tipo_vehiculo || 'CARRO',
           placa: res.placa,
           mensaje: res.mensaje,
@@ -148,6 +141,7 @@ export class IngresoService {
         return respuesta;
       }),
       catchError((error) => {
+        if (desdeSimulacion) return throwError(() => error);
         // En caso de conflicto de negocio (409 anti-passback) o mensaje de regla de negocio
         if (error.status === 409 || error.status === 400 || error.status === 422) {
           const detalle = error.error?.detail || error.error?.mensaje || 'Ingreso no autorizado por regla de negocio';

@@ -1,4 +1,5 @@
 import random
+from enum import StrEnum
 from typing import ClassVar
 from uuid import UUID
 
@@ -9,6 +10,12 @@ from app.modulos.reconocimiento_placas.dominio.lectura_lpr import (
     LecturaLPR,
     OrigenLectura,
 )
+
+
+class EscenarioSimulacion(StrEnum):
+    ALTA = "alta"
+    BAJA = "baja"
+    SIN_LECTURA = "sin-lectura"
 
 
 class LectorLPRSimulado(LectorLPRPuerto):
@@ -42,6 +49,16 @@ class LectorLPRSimulado(LectorLPRPuerto):
         """Permite que las pruebas o la UI fuercen una placa específica."""
         self.placa_fija = placa
         self.confianza_fija = confianza
+
+    @classmethod
+    def para_escenario(cls, escenario: EscenarioSimulacion) -> "LectorLPRSimulado":
+        match escenario:
+            case EscenarioSimulacion.ALTA:
+                return cls(placa_fija="abc-123", confianza_fija=95.0)
+            case EscenarioSimulacion.BAJA:
+                return cls(placa_fija="def-45a", confianza_fija=55.0)
+            case EscenarioSimulacion.SIN_LECTURA:
+                return cls(placa_fija="", confianza_fija=0.0)
 
     def capturar_lectura(self, carril_id: UUID) -> LecturaLPR:
         placa = self.placa_fija if self.placa_fija is not None else random.choice(self.PLACAS_DEMO)

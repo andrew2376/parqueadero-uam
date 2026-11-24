@@ -81,3 +81,8 @@ class EventoLecturaRespuesta(BaseModel):
     origen: OrigenEventoLectura
     estado: EstadoEventoLectura
     fecha_hora: datetime
+
+
+class SimulacionLPRRespuesta(EventoLecturaRespuesta):
+    tipo_vehiculo: TipoVehiculo | None
+    requiere_confirmacion_manual: bool

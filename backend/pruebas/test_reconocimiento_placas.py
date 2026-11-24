@@ -12,6 +12,7 @@ from app.modulos.reconocimiento_placas.dominio.lectura_lpr import (
     OrigenLectura,
 )
 from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado import (
+    EscenarioSimulacion,
     LectorLPRSimulado,
 )
 from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
@@ -98,3 +99,37 @@ class TestReconocimientoPlacasLPR:
         assert resultado.origen == OrigenLectura.MANUAL
         assert resultado.confianza == 100.0
         assert resultado.tipo_vehiculo == TipoVehiculo.CARRO
+
+    @pytest.mark.parametrize(
+        ("escenario", "placa", "confianza", "estado", "tipo", "requiere_manual"),
+        [
+            (
+                EscenarioSimulacion.ALTA,
+                "ABC123",
+                95.0,
+                EstadoLectura.EXITOSA,
+                TipoVehiculo.CARRO,
+                False,
+            ),
+            (
+                EscenarioSimulacion.BAJA,
+                "DEF45A",
+                55.0,
+                EstadoLectura.BAJA_CONFIANZA,
+                TipoVehiculo.MOTO,
+                True,
+            ),
+            (EscenarioSimulacion.SIN_LECTURA, "", 0.0, EstadoLectura.FALLIDA, None, True),
+        ],
+    )
+    def test_escenarios_reproducibles(
+        self, escenario, placa, confianza, estado, tipo, requiere_manual
+    ):
+        lector = LectorLPRSimulado.para_escenario(escenario)
+        lectura = SimularLecturaPlaca(lector).ejecutar(self.carril_id)
+        assert lectura.carril_id == self.carril_id
+        assert lectura.placa == placa
+        assert lectura.confianza == confianza
+        assert lectura.estado == estado
+        assert lectura.tipo_vehiculo == tipo
+        assert lectura.requiere_confirmacion_manual is requiere_manual

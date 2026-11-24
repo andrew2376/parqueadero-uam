@@ -5,12 +5,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
+from app.modulos.autenticacion.dominio.usuario import RolUsuario
+from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
+from app.modulos.carriles.dominio.carril import TipoCarril
 from app.modulos.carriles.infraestructura.carril_repositorio_sqlalchemy import (
     CarrilRepositorioSQLAlchemy,
 )
 from app.modulos.eventos_lectura.aplicacion.registrar_evento_lectura import (
     RegistrarEventoLectura,
 )
+from app.modulos.eventos_lectura.dominio.evento_lectura import EventoLectura
 from app.modulos.eventos_lectura.infraestructura.evento_lectura_repositorio_sqlalchemy import (
     EventoLecturaRepositorioSQLAlchemy,
 )
@@ -22,13 +26,17 @@ from app.modulos.reconocimiento_placas.aplicacion.casos_uso_lpr import (
 from app.modulos.reconocimiento_placas.aplicacion.registrar_evento_desde_lpr import (
     RegistrarEventoDesdeLPR,
 )
+from app.modulos.reconocimiento_placas.dominio.lector_lpr_puerto import LectorLPRPuerto
+from app.modulos.reconocimiento_placas.dominio.lectura_lpr import LecturaLPR
 from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado import (
+    EscenarioSimulacion,
     LectorLPRSimulado,
 )
 from app.modulos.reconocimiento_placas.presentacion.esquemas_lpr import (
     EventoLecturaRespuesta,
     LecturaLPREsquema,
     LecturaManualSolicitud,
+    SimulacionLPRRespuesta,
     ValidarLecturaManualSolicitud,
 )
 
@@ -87,25 +95,12 @@ def construir_registrador_eventos(sesion: Session):
     )
 
 
-@router.post(
-    "/automatica",
-    response_model=EventoLecturaRespuesta,
-    status_code=status.HTTP_201_CREATED,
-)
-def registrar_lectura_automatica(
-    carril_id: UUID,
-    sesion: Session = Depends(obtener_sesion),
-):
+def capturar_y_registrar(
+    carril_id: UUID, lector: LectorLPRPuerto, sesion: Session
+) -> tuple[LecturaLPR, EventoLectura]:
     try:
-        lector = LectorLPRSimulado()
-
-        caso_uso_lectura = SimularLecturaPlaca(lector)
-        lectura = caso_uso_lectura.ejecutar(carril_id)
-
-        registrar_evento = construir_registrador_eventos(sesion)
-        evento = registrar_evento.ejecutar(lectura)
-
-        return evento
+        lectura = SimularLecturaPlaca(lector).ejecutar(carril_id)
+        return lectura, construir_registrador_eventos(sesion).ejecutar(lectura)
 
     except ValueError as error:
         raise HTTPException(
@@ -122,7 +117,48 @@ def registrar_lectura_automatica(
 
 
 @router.post(
+    "/automatica",
+    dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
+    response_model=EventoLecturaRespuesta,
+    status_code=status.HTTP_201_CREATED,
+)
+def registrar_lectura_automatica(
+    carril_id: UUID,
+    sesion: Session = Depends(obtener_sesion),
+):
+    _, evento = capturar_y_registrar(carril_id, LectorLPRSimulado(), sesion)
+    return evento
+
+
+@router.post(
+    "/simulacion",
+    dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
+    response_model=SimulacionLPRRespuesta,
+    status_code=status.HTTP_201_CREATED,
+)
+def simular_lectura_de_entrada(
+    carril_id: UUID,
+    escenario: EscenarioSimulacion = EscenarioSimulacion.ALTA,
+    sesion: Session = Depends(obtener_sesion),
+) -> SimulacionLPRRespuesta:
+    carril = CarrilRepositorioSQLAlchemy(sesion).obtener_por_id(carril_id)
+    if carril is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "El carril indicado no existe.")
+    if not carril.activo or carril.tipo not in (TipoCarril.ENTRADA, TipoCarril.MIXTO):
+        raise HTTPException(status.HTTP_409_CONFLICT, "El carril no está habilitado para ingreso.")
+
+    lector = LectorLPRSimulado.para_escenario(escenario)
+    lectura, evento = capturar_y_registrar(carril_id, lector, sesion)
+    return SimulacionLPRRespuesta(
+        **EventoLecturaRespuesta.model_validate(evento, from_attributes=True).model_dump(),
+        tipo_vehiculo=lectura.tipo_vehiculo,
+        requiere_confirmacion_manual=lectura.requiere_confirmacion_manual,
+    )
+
+
+@router.post(
     "/manual",
+    dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
     response_model=EventoLecturaRespuesta,
     status_code=status.HTTP_201_CREATED,
 )

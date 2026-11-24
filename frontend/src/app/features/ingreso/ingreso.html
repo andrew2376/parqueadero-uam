@@ -13,7 +13,7 @@
     <section class="card lpr-card">
       <div class="card-header">
         <h2 class="card-title">Lectura de placa</h2>
-        <span class="card-subtitle">Simulador LPR · Datos ficticios</span>
+        <span class="card-subtitle">Simulador LPR</span>
       </div>
 
       <!-- Visor de la cámara simulada -->
@@ -25,7 +25,7 @@
           <div class="car-body">
             <div class="car-windshield"></div>
             <div class="plate-badge-preview">
-              <span class="plate-text">{{ placaActual || 'ABC123' }}</span>
+              <span class="plate-text">{{ placaActual || '—' }}</span>
             </div>
           </div>
         </div>
@@ -42,9 +42,21 @@
       }
 
       <!-- Botón de simular nueva lectura -->
+      <label for="escenario-lpr">Escenario de simulación</label>
+      <select id="escenario-lpr" #escenarioLpr
+        [value]="escenario" [disabled]="simulando || procesando"
+        (change)="seleccionarEscenario(escenarioLpr.value)">
+        <option value="alta">Confianza alta</option>
+        <option value="baja">Confianza baja</option>
+        <option value="sin-lectura">Sin lectura</option>
+      </select>
+      @if (mensajeSimulacion) {
+        <p role="status">{{ mensajeSimulacion }}</p>
+      }
       <button
         type="button"
         class="btn-simulate"
+        [disabled]="simulando || procesando"
         (click)="onSimularLectura()"
       >
         Simular nueva lectura
@@ -130,7 +142,7 @@
         <button
           type="submit"
           class="btn-register"
-          [disabled]="procesando || ingresoForm.invalid"
+          [disabled]="procesando || simulando || ingresoForm.invalid"
         >
           @if (procesando) {
             <span>Registrando acceso...</span>

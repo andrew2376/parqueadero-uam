@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IngresoService, PlacaSimulada } from '../../core/services/ingreso.service';
+import { EscenarioSimulacion, IngresoService } from '../../core/services/ingreso.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ResultadoAcceso } from '../../core/models';
 
@@ -15,12 +15,19 @@ import { ResultadoAcceso } from '../../core/models';
 export class ControlIngresoComponent implements OnInit {
   ingresoForm!: FormGroup;
 
-  placaActual = 'ABC123';
-  confianzaActual = 96;
+  placaActual = '';
+  confianzaActual = 0;
   cuposActuales = 72;
 
-  placaOriginalLPR = 'ABC123';
-  confianzaOriginalLPR = 96;
+  placaOriginalLPR = '';
+  confianzaOriginalLPR = 0;
+
+  escenario: EscenarioSimulacion = 'alta';
+  simulando = false;
+  mensajeSimulacion: string | null = null;
+  private simulacionSolicitada = false;
+  private simulacionFallida = false;
+  private requiereConfirmacionManual = false;
 
   procesando = false;
   resultadoIngreso: ResultadoAcceso | null = null;
@@ -36,32 +43,59 @@ export class ControlIngresoComponent implements OnInit {
   ngOnInit(): void {
     this.ingresoForm = this.fb.group({
       placa: [this.placaActual, [Validators.required, Validators.pattern(/^[a-zA-Z0-9]{5,6}$/)]],
-      tipoVehiculoTexto: ['Automóvil'],
+      tipoVehiculoTexto: ['Desconocido'],
       sede: ['Sede principal']
     });
   }
 
   get esBajaConfianza(): boolean {
-    return this.confianzaActual < 70;
+    return this.requiereConfirmacionManual;
+  }
+
+  seleccionarEscenario(valor: string): void {
+    if (valor === 'alta' || valor === 'baja' || valor === 'sin-lectura') {
+      this.escenario = valor;
+    }
   }
 
   onSimularLectura(): void {
-    const lectura: PlacaSimulada = this.ingresoService.simularLectura();
-    this.placaActual = lectura.placa;
-    this.confianzaActual = lectura.confianza;
-    this.placaOriginalLPR = lectura.placa;
-    this.confianzaOriginalLPR = lectura.confianza;
+    if (this.simulando || this.procesando) return;
+
+    this.simulando = true;
+    this.simulacionSolicitada = true;
+    this.simulacionFallida = false;
+    this.requiereConfirmacionManual = false;
+    this.placaActual = this.placaOriginalLPR = '';
+    this.confianzaActual = this.confianzaOriginalLPR = 0;
+    this.ingresoForm.patchValue({ placa: '', tipoVehiculoTexto: 'Desconocido' });
     this.resultadoIngreso = null;
     this.mensajeValidacionManual = null;
+    this.mensajeSimulacion = null;
 
-    const tipoTexto = lectura.tipo === 'MOTO' ? 'Motocicleta' : 'Automóvil';
-    this.ingresoForm.patchValue({
-      placa: lectura.placa,
-      tipoVehiculoTexto: tipoTexto
-    });
+    this.ingresoService.simularLectura(this.ingresoService.carrilEntradaDefault, this.escenario)
+      .subscribe({
+        next: lectura => {
+          this.simulando = false;
+          this.placaActual = this.placaOriginalLPR = lectura.placa ?? '';
+          this.confianzaActual = this.confianzaOriginalLPR = lectura.confianza;
+          this.requiereConfirmacionManual = lectura.requiere_confirmacion_manual;
+          if (lectura.estado === 'FALLIDA') this.mensajeSimulacion = 'No se detectó una placa.';
+          const tipoTexto = lectura.tipo_vehiculo === 'MOTO' ? 'Motocicleta' :
+            lectura.tipo_vehiculo === 'CARRO' ? 'Automóvil' : 'Desconocido';
+          this.ingresoForm.patchValue({ placa: this.placaActual, tipoVehiculoTexto: tipoTexto });
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.simulando = false;
+          this.simulacionFallida = true;
+          this.mensajeSimulacion = 'No fue posible obtener la lectura del servidor.';
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   onPlacaManualChange(): void {
+    this.simulacionFallida = false;
     const valor = this.ingresoForm.get('placa')?.value || '';
     const placaLimpia = valor.toUpperCase().trim();
     this.placaActual = placaLimpia;
@@ -78,7 +112,7 @@ export class ControlIngresoComponent implements OnInit {
   }
 
   onRegistrarIngreso(): void {
-    if (this.ingresoForm.invalid) return;
+    if (this.ingresoForm.invalid || this.procesando || this.simulando || this.simulacionFallida) return;
 
     this.procesando = true;
     const placa = (this.ingresoForm.get('placa')?.value || '').toUpperCase().trim();
@@ -104,7 +138,7 @@ export class ControlIngresoComponent implements OnInit {
       carrilId: this.ingresoService.carrilEntradaDefault,
       placa: placa,
       confianzaLectura: this.confianzaActual
-    }).subscribe({
+    }, this.simulacionSolicitada).subscribe({
       next: (res) => {
         this.procesando = false;
         this.resultadoIngreso = res;
