@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.configuracion import obtener_configuracion
 from app.infraestructura.base_datos import modelos as modelos_registrados  # noqa: F401
-
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )

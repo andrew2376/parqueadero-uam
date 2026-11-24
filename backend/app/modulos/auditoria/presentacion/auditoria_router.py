@@ -13,7 +13,6 @@ from app.modulos.auditoria.presentacion.esquemas_auditoria import AuditoriaRespu
 from app.modulos.autenticacion.dominio.usuario import RolUsuario
 from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
 
-
 router = APIRouter(
     prefix="/auditoria",
     tags=["Auditoría"],

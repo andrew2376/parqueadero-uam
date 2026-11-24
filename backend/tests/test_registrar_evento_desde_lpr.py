@@ -25,7 +25,6 @@ from app.modulos.reconocimiento_placas.aplicacion.registrar_evento_desde_lpr imp
 from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado import (
     LectorLPRSimulado,
 )
-from datetime import datetime
 
 
 class CarrilRepositorioFake(CarrilRepositorio):

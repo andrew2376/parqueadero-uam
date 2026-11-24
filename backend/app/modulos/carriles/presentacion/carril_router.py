@@ -6,15 +6,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
-
 from app.modulos.auditoria.dominio.auditoria import Auditoria
 from app.modulos.auditoria.infraestructura.auditoria_repositorio_sqlalchemy import (
     AuditoriaRepositorioSQLAlchemy,
 )
-
 from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
 from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
-
 from app.modulos.carriles.aplicacion.casos_uso_carril import (
     ActualizarCarril,
     CambiarEstadoCarril,
@@ -31,7 +28,6 @@ from app.modulos.carriles.presentacion.esquemas_carril import (
     CarrilCrear,
     CarrilRespuesta,
 )
-
 
 router = APIRouter(
     prefix="/carriles",
