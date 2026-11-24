@@ -1,18 +1,32 @@
 from collections.abc import Callable
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.configuracion import obtener_configuracion
 from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
-from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
-from app.modulos.autenticacion.infraestructura.tokens_jwt import TokensJWT
-from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria import (
-    obtener_repositorio_usuario,
+from app.modulos.autenticacion.dominio.usuario_repositorio import (
+    RepositorioUsuariosNoDisponible,
+    UsuarioRepositorio,
 )
+from app.modulos.autenticacion.infraestructura.tokens_jwt import TokensJWT
 
 esquema_seguridad_bearer = HTTPBearer(auto_error=False)
+
+
+def obtener_repositorio_usuario() -> UsuarioRepositorio:
+    raise RuntimeError("Configura un proveedor de UsuarioRepositorio para esta aplicación.")
+
+
+def responder_repositorio_no_disponible(
+    _request: Request, _error: RepositorioUsuariosNoDisponible
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "El servicio de autenticación no está disponible temporalmente."},
+    )
 
 
 def obtener_tokens_jwt() -> TokensJWT:

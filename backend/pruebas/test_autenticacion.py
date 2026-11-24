@@ -4,13 +4,14 @@ from uuid import UUID
 
 import jwt
 import pytest
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.configuracion import Configuracion, obtener_configuracion
 from app.modulos.autenticacion.aplicacion.servicio_autenticacion import AutenticarUsuario
 from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
+from app.modulos.autenticacion.dominio.usuario_repositorio import RepositorioUsuariosNoDisponible
 from app.modulos.autenticacion.infraestructura.password_hasher_argon2 import PasswordHasherArgon2
 from app.modulos.autenticacion.infraestructura.tokens_jwt import TokensJWT
 from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria import (
@@ -18,8 +19,10 @@ from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria impor
 )
 from app.modulos.autenticacion.presentacion.auth_router import router
 from app.modulos.autenticacion.presentacion.dependencias_auth import (
+    obtener_repositorio_usuario,
     obtener_tokens_jwt,
     requerir_rol,
+    responder_repositorio_no_disponible,
 )
 
 
@@ -30,7 +33,9 @@ def password_hasher():
 
 @pytest.fixture
 def repositorio(password_hasher):
-    return UsuarioRepositorioMemoria(password_hasher)
+    return UsuarioRepositorioMemoria(
+        password_hasher, {"operador1": "operador123", "admin": "admin123"}
+    )
 
 
 @pytest.fixture
@@ -139,10 +144,17 @@ def test_requerir_rol_bloquea_operador_en_ruta_admin():
 
 
 @pytest.fixture
-def cliente_auth(tokens):
+def cliente_auth(tokens, repositorio):
     app = FastAPI()
     app.include_router(router, prefix="/api/v1")
+    app.dependency_overrides[obtener_repositorio_usuario] = lambda: repositorio
     app.dependency_overrides[obtener_tokens_jwt] = lambda: tokens
+    app.add_exception_handler(RepositorioUsuariosNoDisponible, responder_repositorio_no_disponible)
+
+    @app.get("/solo-admin", dependencies=[Depends(requerir_rol(RolUsuario.ADMINISTRADOR))])
+    def solo_admin():
+        return {"permitido": True}
+
     with TestClient(app) as cliente:
         yield cliente
 
@@ -183,6 +195,34 @@ def test_contrato_http_login_y_perfil(
     )
     assert perfil.status_code == 200
     assert perfil.json() == usuario
+    protegido = cliente_auth.get(
+        "/solo-admin", headers={"Authorization": f"Bearer {datos['token']}"}
+    )
+    assert protegido.status_code == (200 if rol == "ADMINISTRADOR" else 403)
+
+
+def test_caida_de_repositorio_devuelve_503_en_login_perfil_y_roles(
+    cliente_auth, repositorio, tokens, monkeypatch
+):
+    usuario = repositorio.buscar_por_username("admin")
+    assert usuario is not None
+    headers = {"Authorization": f"Bearer {tokens.emitir(usuario)}"}
+
+    def fallar(_username):
+        raise RepositorioUsuariosNoDisponible("detalle interno de conexión")
+
+    monkeypatch.setattr(repositorio, "buscar_por_username", fallar)
+    respuestas = (
+        cliente_auth.post("/api/v1/auth/login", json={"username": "admin", "password": "admin123"}),
+        cliente_auth.get("/api/v1/auth/perfil", headers=headers),
+        cliente_auth.get("/solo-admin", headers=headers),
+    )
+    for respuesta in respuestas:
+        assert respuesta.status_code == 503
+        assert respuesta.json() == {
+            "detail": "El servicio de autenticación no está disponible temporalmente."
+        }
+        assert "WWW-Authenticate" not in respuesta.headers
 
 
 def test_http_rechaza_credenciales_y_tokens_invalidos(cliente_auth):

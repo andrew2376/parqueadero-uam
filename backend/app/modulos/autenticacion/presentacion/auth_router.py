@@ -7,10 +7,8 @@ from app.modulos.autenticacion.dominio.usuario import Usuario
 from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
 from app.modulos.autenticacion.infraestructura.password_hasher_argon2 import PasswordHasherArgon2
 from app.modulos.autenticacion.infraestructura.tokens_jwt import TokensJWT
-from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria import (
-    obtener_repositorio_usuario,
-)
 from app.modulos.autenticacion.presentacion.dependencias_auth import (
+    obtener_repositorio_usuario,
     obtener_tokens_jwt,
     obtener_usuario_actual,
 )

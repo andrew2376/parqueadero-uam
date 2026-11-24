@@ -1,8 +1,12 @@
 from sqlalchemy import select
+from sqlalchemy.exc import DisconnectionError, InterfaceError, OperationalError, TimeoutError
 from sqlalchemy.orm import Session
 
 from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
-from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
+from app.modulos.autenticacion.dominio.usuario_repositorio import (
+    RepositorioUsuariosNoDisponible,
+    UsuarioRepositorio,
+)
 from app.modulos.autenticacion.infraestructura.usuario_modelo import UsuarioModelo
 
 
@@ -12,7 +16,10 @@ class UsuarioRepositorioSQLAlchemy(UsuarioRepositorio):
 
     def buscar_por_username(self, username: str) -> Usuario | None:
         consulta = select(UsuarioModelo).where(UsuarioModelo.username == username.strip().lower())
-        modelo = self.sesion.scalars(consulta).one_or_none()
+        try:
+            modelo = self.sesion.scalars(consulta).one_or_none()
+        except (DisconnectionError, InterfaceError, OperationalError, TimeoutError) as error:
+            raise RepositorioUsuariosNoDisponible from error
         if modelo is None:
             return None
 
