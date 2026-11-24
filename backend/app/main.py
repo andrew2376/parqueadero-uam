@@ -9,6 +9,9 @@ from app.modulos.accesos.presentacion.ingreso_router import (
 from app.modulos.accesos.presentacion.reingreso_router import (
     router as router_accesos,
 )
+from app.modulos.auditoria.presentacion.auditoria_router import (
+    router as router_auditoria,
+)
 from app.modulos.autenticacion.presentacion.auth_router import (
     router as router_auth,
 )
@@ -52,58 +55,75 @@ aplicacion.add_middleware(
 )
 
 
+# Estado
 aplicacion.include_router(
     router_estado,
     prefix=configuracion.prefijo_api,
 )
 
+# Carriles
 aplicacion.include_router(
     router_carriles,
     prefix=configuracion.prefijo_api,
 )
 
+# Tarifas
 aplicacion.include_router(
     router_tarifas,
     prefix=configuracion.prefijo_api,
 )
 
+# Pagos
 aplicacion.include_router(
     router_pagos,
     prefix=configuracion.prefijo_api,
 )
 
+# Accesos
 aplicacion.include_router(
     router_accesos,
     prefix=configuracion.prefijo_api,
 )
 
+# Estancias
 aplicacion.include_router(
     router_estancias,
     prefix=configuracion.prefijo_api,
 )
 
+# Ingreso
 aplicacion.include_router(
     router_ingreso,
     prefix=configuracion.prefijo_api,
 )
 
+# Autenticación
 aplicacion.include_router(
     router_auth,
     prefix=configuracion.prefijo_api,
 )
 
+# Reconocimiento de placas (LPR)
 aplicacion.include_router(
     router_lpr,
     prefix=configuracion.prefijo_api,
 )
 
+# Validación manual de placas
 aplicacion.include_router(
     router_validacion_manual_lpr,
     prefix=configuracion.prefijo_api,
 )
 
+# Eventos de lectura
 aplicacion.include_router(
     router_eventos_lectura,
+    prefix=configuracion.prefijo_api,
+)
+
+# Auditoría
+aplicacion.include_router(
+    router_auditoria,
     prefix=configuracion.prefijo_api,
 )
 
