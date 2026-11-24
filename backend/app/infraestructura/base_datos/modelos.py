@@ -7,6 +7,7 @@ aquí para que Alembic pueda detectarlos en las migraciones.
 
 from app.infraestructura.base_datos.conexion import Base  # noqa: F401
 from app.modulos.auditoria.infraestructura.auditoria_modelo import AuditoriaModelo  # noqa: F401
+from app.modulos.autenticacion.infraestructura.usuario_modelo import UsuarioModelo  # noqa: F401
 from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo  # noqa: F401
 from app.modulos.cobros.infraestructura.cobro_modelo import CobroModelo  # noqa: F401
 from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo  # noqa: F401

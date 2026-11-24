@@ -1,24 +1,43 @@
 from collections.abc import Callable
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.modulos.autenticacion.aplicacion.servicio_autenticacion import (
-    decodificar_token,
-)
+from app.configuracion import obtener_configuracion
 from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
-from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
-from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria import (
-    obtener_repositorio_usuario,
+from app.modulos.autenticacion.dominio.usuario_repositorio import (
+    RepositorioUsuariosNoDisponible,
+    UsuarioRepositorio,
 )
+from app.modulos.autenticacion.infraestructura.tokens_jwt import TokensJWT
 
 esquema_seguridad_bearer = HTTPBearer(auto_error=False)
+
+
+def obtener_repositorio_usuario() -> UsuarioRepositorio:
+    raise RuntimeError("Configura un proveedor de UsuarioRepositorio para esta aplicación.")
+
+
+def responder_repositorio_no_disponible(
+    _request: Request, _error: RepositorioUsuariosNoDisponible
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "El servicio de autenticación no está disponible temporalmente."},
+    )
+
+
+def obtener_tokens_jwt() -> TokensJWT:
+    configuracion = obtener_configuracion()
+    return TokensJWT(configuracion.secreto_jwt, configuracion.algoritmo_jwt)
 
 
 def obtener_usuario_actual(
     credenciales: HTTPAuthorizationCredentials | None = Depends(esquema_seguridad_bearer),
     repositorio: UsuarioRepositorio = Depends(obtener_repositorio_usuario),
+    tokens: TokensJWT = Depends(obtener_tokens_jwt),
 ) -> Usuario:
     """Extrae y valida el token Bearer para identificar al usuario."""
     if not credenciales:
@@ -29,8 +48,10 @@ def obtener_usuario_actual(
         )
 
     try:
-        payload = decodificar_token(credenciales.credentials)
-        username: str = payload.get("username", "")
+        payload = tokens.decodificar(credenciales.credentials)
+        username = payload["username"]
+        if not isinstance(username, str):
+            raise jwt.InvalidTokenError("El nombre de usuario del token no es válido.")
     except jwt.PyJWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,7 +60,7 @@ def obtener_usuario_actual(
         ) from err
 
     usuario = repositorio.buscar_por_username(username)
-    if not usuario or not usuario.activo:
+    if not usuario or not usuario.activo or str(usuario.id) != payload["sub"]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario no encontrado o inactivo.",
