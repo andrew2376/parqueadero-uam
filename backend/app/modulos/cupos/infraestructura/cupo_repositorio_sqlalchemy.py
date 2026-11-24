@@ -1,4 +1,3 @@
-
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -11,7 +10,6 @@ from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
 
 
 class CupoRepositorioSQLAlchemy(CupoRepositorio):
-
     def __init__(self, sesion: Session):
         self.sesion = sesion
 
@@ -38,9 +36,7 @@ class CupoRepositorioSQLAlchemy(CupoRepositorio):
         )
 
         if cupo.esta_lleno:
-            raise ValueError(
-                f"No hay cupos disponibles para {cupo.tipo_vehiculo.lower()}."
-            )
+            raise ValueError(f"No hay cupos disponibles para {cupo.tipo_vehiculo.lower()}.")
 
         # No se confirma aquí la transacción.
         # El bloqueo debe mantenerse hasta que se registre la estancia
@@ -54,15 +50,9 @@ class CupoRepositorioSQLAlchemy(CupoRepositorio):
         cupos_moto: int,
     ) -> tuple[int, int]:
 
-        consulta_sede = (
-            select(SedeModelo)
-            .where(SedeModelo.id == sede_id)
-            .with_for_update()
-        )
+        consulta_sede = select(SedeModelo).where(SedeModelo.id == sede_id).with_for_update()
 
-        sede = self.sesion.execute(
-            consulta_sede
-        ).scalar_one_or_none()
+        sede = self.sesion.execute(consulta_sede).scalar_one_or_none()
 
         if sede is None:
             raise ValueError("La sede especificada no existe.")
@@ -84,8 +74,7 @@ class CupoRepositorioSQLAlchemy(CupoRepositorio):
         # Validar que la capacidad no sea inferior a la ocupación actual.
         if cupos_carro < cupo_carro.ocupados:
             raise ValueError(
-                "La capacidad de carros no puede ser inferior "
-                "a los vehículos actualmente ocupados."
+                "La capacidad de carros no puede ser inferior a los vehículos actualmente ocupados."
             )
 
         if cupos_moto < cupo_moto.ocupados:
@@ -116,31 +105,19 @@ class CupoRepositorioSQLAlchemy(CupoRepositorio):
         tipo = tipo_vehiculo.strip().upper()
 
         if tipo not in {"CARRO", "MOTO"}:
-            raise ValueError(
-                "El tipo de vehículo debe ser CARRO o MOTO."
-            )
+            raise ValueError("El tipo de vehículo debe ser CARRO o MOTO.")
 
-        consulta_sede = select(SedeModelo).where(
-            SedeModelo.id == sede_id
-        )
+        consulta_sede = select(SedeModelo).where(SedeModelo.id == sede_id)
 
         if bloquear:
             consulta_sede = consulta_sede.with_for_update()
 
-        sede = self.sesion.execute(
-            consulta_sede
-        ).scalar_one_or_none()
+        sede = self.sesion.execute(consulta_sede).scalar_one_or_none()
 
         if sede is None:
-            raise ValueError(
-                "La sede especificada no existe."
-            )
+            raise ValueError("La sede especificada no existe.")
 
-        capacidad = (
-            sede.cupos_carro
-            if tipo == "CARRO"
-            else sede.cupos_moto
-        )
+        capacidad = sede.cupos_carro if tipo == "CARRO" else sede.cupos_moto
 
         ocupados = (
             self.sesion.query(func.count(EstanciaModelo.id))

@@ -1,4 +1,3 @@
-
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -31,9 +30,7 @@ router = APIRouter(
 def consultar_cupos(
     sede_id: UUID,
     sesion: Session = Depends(obtener_sesion),
-    usuario_actual: Usuario = Depends(
-        requerir_rol(RolUsuario.ADMINISTRADOR)
-    ),
+    usuario_actual: Usuario = Depends(requerir_rol(RolUsuario.ADMINISTRADOR)),
 ):
     repositorio = CupoRepositorioSQLAlchemy(sesion)
     caso_uso = ConsultarDisponibilidad(repositorio)
@@ -74,9 +71,7 @@ def actualizar_cupos(
     sede_id: UUID,
     datos: CapacidadesActualizar,
     sesion: Session = Depends(obtener_sesion),
-    usuario_actual: Usuario = Depends(
-        requerir_rol(RolUsuario.ADMINISTRADOR)
-    ),
+    usuario_actual: Usuario = Depends(requerir_rol(RolUsuario.ADMINISTRADOR)),
 ):
     repositorio = CupoRepositorioSQLAlchemy(sesion)
     caso_uso = ActualizarCapacidades(repositorio)
