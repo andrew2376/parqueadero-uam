@@ -17,11 +17,38 @@ export interface PlacaSimulada {
   confianza: number;
 }
 
+export interface LecturaManualLPR {
+  carrilId: string;
+  placaConfirmada: string;
+  operadorId: string;
+  placaDetectadaPrevia?: string;
+  confianzaPrevia?: number;
+  umbralConfianza?: number;
+}
+
+export interface LecturaLPRRespuesta {
+  id: string;
+  carrilId: string;
+  placa: string;
+  confianza: number;
+  origen: string;
+  estado: string;
+  tipoVehiculo: string;
+  placaOriginalDetectada?: string;
+  operadorId?: string;
+  requiereConfirmacionManual: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class IngresoService {
   private readonly apiUrl = 'http://localhost:8001/api/v1/accesos';
+  private readonly lprApiUrl = 'http://localhost:8001/api/v1/lpr';
+
+  // ID de la sede principal y carril de entrada real registrado en PostgreSQL
+  public readonly sedeIdDefault = '03793b27-4b34-42ea-9bb0-28f8bc5b330d';
+  public readonly carrilEntradaDefault = 'c1343f2e-20d6-4374-981c-fcb00d6130c2';
 
   // Catálogo de placas demo para la simulación LPR académica
   private readonly catalogoDemo: PlacaSimulada[] = [
@@ -57,16 +84,52 @@ export class IngresoService {
   }
 
   /**
+   * Valida y audita una lectura manual o corregida de baja confianza (S201)
+   */
+  validarLecturaManual(datos: LecturaManualLPR): Observable<LecturaLPRRespuesta> {
+    return this.http.post<any>(`${this.lprApiUrl}/validar-manual`, {
+      carril_id: datos.carrilId || this.carrilEntradaDefault,
+      placa_confirmada: datos.placaConfirmada.trim().toUpperCase(),
+      operador_id: datos.operadorId,
+      placa_detectada_previa: datos.placaDetectadaPrevia,
+      confianza_previa: datos.confianzaPrevia,
+      umbral_confianza: datos.umbralConfianza ?? 0.70
+    }).pipe(
+      map(res => ({
+        id: res.id,
+        carrilId: res.carril_id,
+        placa: res.placa,
+        confianza: res.confianza,
+        origen: res.origen,
+        estado: res.estado,
+        tipoVehiculo: res.tipo_vehiculo,
+        placaOriginalDetectada: res.placa_original_detectada,
+        operadorId: res.operador_id,
+        requiereConfirmacionManual: res.requiere_confirmacion_manual
+      })),
+      catchError(() => of({
+        id: 'lpr-manual-local',
+        carrilId: datos.carrilId || this.carrilEntradaDefault,
+        placa: datos.placaConfirmada.trim().toUpperCase(),
+        confianza: 100,
+        origen: 'MANUAL',
+        estado: 'VALIDADO',
+        tipoVehiculo: this.clasificarPlaca(datos.placaConfirmada),
+        requiereConfirmacionManual: false
+      }))
+    );
+  }
+
+  /**
    * Registra el ingreso en el backend (POST /api/v1/accesos/ingreso)
    * con soporte de fallback para desarrollo / demostración.
    */
   registrarIngreso(solicitud: SolicitudIngreso): Observable<ResultadoAcceso> {
-    const sedeDefault = '03793b27-4b34-42ea-9bb0-28f8bc5b330d';
-    const carrilDefault = 'a0000000-0000-0000-0000-000000000001';
+    const carrilReal = solicitud.carrilId || this.carrilEntradaDefault;
 
     return this.http.post<any>(`${this.apiUrl}/ingreso`, {
-      sede_id: sedeDefault,
-      carril_id: carrilDefault,
+      sede_id: this.sedeIdDefault,
+      carril_id: carrilReal,
       placa: solicitud.placa.trim().toUpperCase()
     }).pipe(
       map(res => {
@@ -85,8 +148,8 @@ export class IngresoService {
         return respuesta;
       }),
       catchError((error) => {
-        // En caso de conflicto de negocio (409 anti-passback) o error de backend
-        if (error.status === 409 || error.status === 400) {
+        // En caso de conflicto de negocio (409 anti-passback) o mensaje de regla de negocio
+        if (error.status === 409 || error.status === 400 || error.status === 422) {
           const detalle = error.error?.detail || error.error?.mensaje || 'Ingreso no autorizado por regla de negocio';
           return of({
             permitido: false,
