@@ -1,3 +1,4 @@
+
 import { Routes } from '@angular/router';
 import { PanelComponent } from './features/panel/panel';
 import { LoginComponent } from './features/auth/login/login';
@@ -22,6 +23,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./funcionalidades/carriles/paginas/gestion-carriles/gestion-carriles')
         .then(m => m.GestionCarriles),
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' }
+  },
+  {
+    path: 'tarifas',
+    loadComponent: () =>
+      import('./funcionalidades/tarifas/paginas/gestion-tarifas/gestion-tarifas')
+        .then(m => m.GestionTarifas),
     canActivate: [authGuard],
     data: { rol: 'ADMINISTRADOR' }
   },
