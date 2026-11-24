@@ -1,0 +1,417 @@
+.login-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #ffffff;
+}
+
+/* ==========================================================================
+   COLUMNA IZQUIERDA: BRANDING E ILUSTRACIÓN ISOMÉTRICA
+   ========================================================================== */
+.branding-pane {
+  flex: 1.15;
+  background-color: #f8fafc;
+  padding: 3rem 4rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid #edf2f7;
+  position: relative;
+}
+
+.brand-top {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-container {
+  margin-bottom: 1.75rem;
+}
+
+.uam-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+}
+
+.brand-headings {
+  display: flex;
+  flex-direction: column;
+}
+
+.system-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.brand-app-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0b2545;
+  margin: 0;
+}
+
+.brand-accent-line {
+  width: 36px;
+  height: 4px;
+  background-color: #ffb703;
+  border-radius: 2px;
+  margin: 0.4rem 0 1.25rem 0;
+}
+
+.brand-hero-title {
+  font-size: 2.85rem;
+  font-weight: 800;
+  line-height: 1.12;
+  color: #0f2d59;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.85rem 0;
+}
+
+.brand-institution {
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+.brand-illustration-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 0;
+}
+
+.illustration-img {
+  max-width: 90%;
+  max-height: 280px;
+  object-fit: contain;
+}
+
+.brand-bottom {
+  display: flex;
+  flex-direction: column;
+}
+
+.feature-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f2d59;
+  margin: 0 0 0.25rem 0;
+}
+
+.feature-subtitle {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0 0 1rem 0;
+}
+
+.brand-footer-divider {
+  height: 1px;
+  background-color: #e2e8f0;
+  margin-bottom: 0.75rem;
+}
+
+.brand-footer-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   COLUMNA DERECHA: FORMULARIO DE ACCESO
+   ========================================================================== */
+.form-pane {
+  flex: 1;
+  background-color: #ffffff;
+  padding: 3rem 4.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  justify-content: center;
+}
+
+.secure-access-pill {
+  position: absolute;
+  top: 2.5rem;
+  right: 3.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.lock-icon {
+  width: 14px;
+  height: 14px;
+  stroke: #64748b;
+}
+
+.form-content {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.form-header {
+  margin-bottom: 2rem;
+}
+
+.form-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-title {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #0f2d59;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.85rem 0;
+}
+
+.form-description {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #64748b;
+  margin: 0;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 1.25rem;
+}
+
+.alert-error {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #dc2626;
+}
+
+.alert-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: #006699;
+  box-shadow: 0 0 0 3px rgba(0, 102, 153, 0.12);
+}
+
+.input-wrapper.has-error {
+  border-color: #ef4444;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.9rem;
+  width: 18px;
+  height: 18px;
+  stroke: #94a3b8;
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.6rem;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.9rem;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.input-wrapper input::placeholder {
+  color: #94a3b8;
+  font-size: 0.86rem;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: #64748b;
+  transition: stroke 0.2s;
+}
+
+.eye-btn:hover svg {
+  stroke: #0f2d59;
+}
+
+.error-msg {
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.forgot-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.3rem;
+}
+
+.forgot-link {
+  font-size: 0.82rem;
+  color: #006699;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: #0b2545;
+  text-decoration: underline;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #006699;
+  color: #ffffff;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 4px 12px rgba(0, 102, 153, 0.2);
+  margin-top: 0.4rem;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #004d73;
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.submit-btn:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.arrow-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+.form-disclaimer {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+  margin: 0.5rem 0 0 0;
+}
+
+/* ==========================================================================
+   RESPONSIVIDAD
+   ========================================================================== */
+@media (max-width: 960px) {
+  .login-layout {
+    flex-direction: column;
+  }
+
+  .branding-pane {
+    padding: 2.5rem 2rem;
+    border-right: none;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .brand-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .brand-illustration-container {
+    display: none;
+  }
+
+  .form-pane {
+    padding: 3rem 2rem;
+  }
+
+  .secure-access-pill {
+    position: static;
+    margin-bottom: 1.5rem;
+    align-self: flex-end;
+  }
+}

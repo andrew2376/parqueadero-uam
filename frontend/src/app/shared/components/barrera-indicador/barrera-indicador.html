@@ -1,0 +1,34 @@
+<div class="barrera-card" [class.abierta]="esAbierta" [class.cerrada]="!esAbierta">
+  <!-- Cabecera con semáforo -->
+  <div class="barrera-header">
+    <div class="semaforo">
+      <span class="luz luz-roja" [class.activa]="!esAbierta"></span>
+      <span class="luz luz-verde" [class.activa]="esAbierta"></span>
+    </div>
+    <span class="badge-estado">
+      {{ esAbierta ? 'BARRERA LEVANTADA' : 'BARRERA CERRADA' }}
+    </span>
+  </div>
+
+  <!-- Ilustración esquemática de la barrera -->
+  <div class="escenario-barrera">
+    <div class="poste">
+      <div class="pivote"></div>
+      <div class="pluma" [class.pluma-levantada]="esAbierta">
+        <span class="franja"></span>
+        <span class="franja"></span>
+        <span class="franja"></span>
+        <span class="franja"></span>
+      </div>
+    </div>
+    <div class="piso"></div>
+  </div>
+
+  <!-- Pantalla de mensaje del carril -->
+  <div class="pantalla-mensaje">
+    <div class="mensaje-principal">{{ mensaje }}</div>
+    @if (subtitulo) {
+      <div class="mensaje-subtitulo">{{ subtitulo }}</div>
+    }
+  </div>
+</div>

@@ -1,0 +1,13 @@
+@if (authService.estaAutenticado()) {
+  <div class="app-container">
+    <app-sidebar></app-sidebar>
+    <div class="main-wrapper">
+      <app-header></app-header>
+      <main class="page-content">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>
+} @else {
+  <router-outlet></router-outlet>
+}

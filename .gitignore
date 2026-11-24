@@ -1,13 +1,28 @@
+
+# Python
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
+
+# Variables de entorno
 .env
+.env.*
+!.env.example
+
+# Node.js
 node_modules/
+
+# Builds
 dist/
 .angular/
 coverage/
+
+# Editores
 .vscode/
 .idea/
+
+# Logs
 *.log

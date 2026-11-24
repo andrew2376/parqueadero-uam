@@ -1,0 +1,178 @@
+
+<div class="pagina-carriles">
+
+  <header class="encabezado">
+    <div>
+      <h1>Administración de carriles</h1>
+      <p>Gestiona los carriles de acceso del parqueadero.</p>
+    </div>
+
+    <button class="btn-primary" (click)="abrirFormulario()">
+      + Nuevo carril
+    </button>
+  </header>
+
+  <section class="resumen">
+    <article class="tarjeta-resumen">
+      <span>Total de carriles</span>
+      <strong>{{ carriles.length }}</strong>
+    </article>
+
+    <article class="tarjeta-resumen">
+      <span>Activos</span>
+      <strong>{{ carriles.length ? carriles.filter(c => c.activo).length : 0 }}</strong>
+    </article>
+
+    <article class="tarjeta-resumen">
+      <span>Inactivos</span>
+      <strong>{{ carriles.length ? carriles.filter(c => !c.activo).length : 0 }}</strong>
+    </article>
+  </section>
+
+  @if (error) {
+    <div class="mensaje-error">
+      {{ error }}
+    </div>
+  }
+
+  @if (cargando) {
+    <div class="estado-carga">
+      Cargando carriles...
+    </div>
+  } @else {
+
+    <section class="contenedor-tabla">
+      <div class="titulo-tabla">
+        <div>
+          <h2>Carriles registrados</h2>
+          <p>Listado de carriles de la sede seleccionada.</p>
+        </div>
+      </div>
+
+      @if (carriles.length > 0) {
+        <div class="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (carril of carriles; track carril.id) {
+                <tr>
+                  <td>{{ carril.nombre }}</td>
+
+                  <td>
+                    <span class="tipo-carril"
+                      [class.entrada]="carril.tipo === 'ENTRADA'"
+                      [class.salida]="carril.tipo === 'SALIDA'">
+                      {{ carril.tipo }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span class="estado"
+                      [class.activo]="carril.activo"
+                      [class.inactivo]="!carril.activo">
+                      {{ carril.activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+
+                  <td class="acciones">
+                    <button
+                      class="btn-editar"
+                      (click)="editarCarril(carril)">
+                      Editar
+                    </button>
+
+                    <button
+                      class="btn-estado"
+                      [class.activar]="!carril.activo"
+                      [class.desactivar]="carril.activo"
+                      (click)="cambiarEstado(carril)">
+                      {{ carril.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="estado-vacio">
+          <h3>No hay carriles registrados</h3>
+          <p>Comienza agregando el primer carril de esta sede.</p>
+          <button class="btn-primary" (click)="abrirFormulario()">
+            Crear primer carril
+          </button>
+        </div>
+      }
+    </section>
+  }
+
+  @if (mostrarFormulario) {
+    <div class="modal-fondo">
+      <section class="modal">
+
+        <div class="modal-encabezado">
+          <div>
+            <h2>{{ carrilEditando ? 'Editar carril' : 'Nuevo carril' }}</h2>
+            <p>Completa la información del carril.</p>
+          </div>
+
+          <button class="btn-cerrar" (click)="cancelarFormulario()">
+            ×
+          </button>
+        </div>
+
+        <form (ngSubmit)="guardarCarril()">
+
+          <div class="campo">
+            <label for="nombre">Nombre del carril</label>
+            <input
+              id="nombre"
+              type="text"
+              name="nombre"
+              [(ngModel)]="formulario.nombre"
+              placeholder="Ej. Entrada principal"
+              required>
+          </div>
+
+          <div class="campo">
+            <label for="tipo">Tipo de carril</label>
+            <select
+              id="tipo"
+              name="tipo"
+              [(ngModel)]="formulario.tipo"
+              required>
+              <option value="ENTRADA">Entrada</option>
+              <option value="SALIDA">Salida</option>
+            </select>
+          </div>
+
+          <div class="acciones-formulario">
+            <button
+              type="button"
+              class="btn-secundario"
+              (click)="cancelarFormulario()">
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="guardando">
+              {{ guardando ? 'Guardando...' : 'Guardar carril' }}
+            </button>
+          </div>
+
+        </form>
+      </section>
+    </div>
+  }
+
+</div>
