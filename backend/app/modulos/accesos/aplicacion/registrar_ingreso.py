@@ -1,4 +1,6 @@
+from datetime import datetime
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -9,8 +11,10 @@ from app.modulos.accesos.dominio.ingreso import (
     RegistroIngreso,
     ResultadoIngreso,
 )
+from app.modulos.cobros.aplicacion.generar_cobro import GenerarCobro
 from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
+from app.modulos.tarifas.dominio.franja_horaria import calcular_dia_operativo
 from app.modulos.vehiculos.dominio.vehiculo import (
     TipoVehiculo,
     clasificar_placa,
@@ -20,18 +24,23 @@ from app.modulos.vehiculos.dominio.vehiculo import (
 
 class RegistrarIngresoVehiculo:
     """
-    Caso de uso S113 integrado con S202.
+    Caso de uso S113 integrado con S202 y S206.
 
     1. Normaliza y clasifica la placa.
     2. Valida anti-passback.
     3. Valida reingreso con pase pagado del día.
     4. Bloquea la sede para controlar ingresos concurrentes.
     5. Valida la disponibilidad por tipo de vehículo.
-    6. Registra la estancia en PostgreSQL.
-    7. Emite la decisión de barrera.
+    6. Genera o recupera el cobro del día operativo.
+    7. Registra la estancia en PostgreSQL.
+    8. Emite la decisión de barrera.
     """
 
-    def __init__(self, repositorio: AccesoRepositorio, sesion: Session):
+    def __init__(
+        self,
+        repositorio: AccesoRepositorio,
+        sesion: Session,
+    ):
         self.repositorio = repositorio
         self.sesion = sesion
         self.validador_reingreso = ValidarReingreso(sesion)
@@ -105,6 +114,7 @@ class RegistrarIngresoVehiculo:
 
             if sede_bloqueada is None:
                 self.sesion.rollback()
+
                 return ResultadoIngreso(
                     autorizado=False,
                     decision_barrera=DecisionBarrera.MANTENER_CERRADA,
@@ -127,6 +137,7 @@ class RegistrarIngresoVehiculo:
 
             if estancia_activa is not None:
                 self.sesion.rollback()
+
                 return ResultadoIngreso(
                     autorizado=False,
                     decision_barrera=DecisionBarrera.MANTENER_CERRADA,
@@ -161,6 +172,7 @@ class RegistrarIngresoVehiculo:
             # El reingreso autorizado conserva la excepción de S113.
             if disponibles <= 0 and not es_reingreso:
                 self.sesion.rollback()
+
                 return ResultadoIngreso(
                     autorizado=False,
                     decision_barrera=DecisionBarrera.MANTENER_CERRADA,
@@ -175,11 +187,34 @@ class RegistrarIngresoVehiculo:
                     cupos_disponibles_restantes=0,
                 )
 
-            # 8. Crear la estancia que contabiliza S202.
+            # 8. Obtener la hora local y el día operativo de la sede.
+            ahora = datetime.now(ZoneInfo(sede_bloqueada.zona_horaria))
+
+            dia_operativo = calcular_dia_operativo(
+                fecha_hora=ahora,
+                zona_horaria=sede_bloqueada.zona_horaria,
+                inicio_dia_operativo=sede_bloqueada.inicio_dia_operativo,
+            )
+
+            # 9. Generar el primer cobro del día o recuperar el existente.
+            # El cobro conserva la tarifa y versión originales durante
+            # todos los reingresos del mismo día operativo.
+            GenerarCobro(self.sesion).ejecutar(
+                placa=placa,
+                sede_id=sede_id,
+                tipo_vehiculo=tipo_vehiculo.value,
+                dia_operativo=dia_operativo,
+                fecha_hora=ahora,
+                zona_horaria=sede_bloqueada.zona_horaria,
+            )
+
+            # 10. Crear la estancia que contabiliza S202.
+            # Se reutiliza la misma hora local calculada para el cobro.
             nueva_estancia = EstanciaModelo(
                 sede_id=sede_id,
                 placa=placa,
                 tipo_vehiculo=tipo_vehiculo.value,
+                fecha_hora_entrada=ahora,
                 fecha_hora_salida=None,
                 estado="DENTRO",
             )
@@ -187,14 +222,14 @@ class RegistrarIngresoVehiculo:
             self.sesion.add(nueva_estancia)
             self.sesion.flush()
 
-            # 9. Calcular cupos restantes después del ingreso.
+            # 11. Calcular cupos restantes después del ingreso.
             ocupados += 1
             cupos_restantes = max(0, cupos_maximos - ocupados)
 
-            # 10. Confirmar la estancia y liberar el bloqueo.
+            # 12. Confirmar cobro y estancia en la misma transacción.
             self.sesion.commit()
 
-            # 11. Registrar el acceso conservando S113.
+            # 13. Registrar el acceso conservando S113.
             nuevo_ingreso = RegistroIngreso(
                 sede_id=sede_id,
                 carril_id=carril_id,
@@ -208,7 +243,7 @@ class RegistrarIngresoVehiculo:
             mensaje_exito = (
                 f"Reingreso autorizado para {placa} ({tipo_vehiculo.value}). Pase del día vigente."
                 if es_reingreso
-                else f"Ingreso autorizado para {placa} ({tipo_vehiculo.value}). Barrera abierta."
+                else (f"Ingreso autorizado para {placa} ({tipo_vehiculo.value}). Barrera abierta.")
             )
 
             return ResultadoIngreso(
