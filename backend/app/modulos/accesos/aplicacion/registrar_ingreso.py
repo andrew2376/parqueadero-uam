@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -12,7 +11,6 @@ from app.modulos.accesos.dominio.ingreso import (
     RegistroIngreso,
     ResultadoIngreso,
 )
-
 from app.modulos.cobros.aplicacion.generar_cobro import GenerarCobro
 from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
@@ -190,9 +188,7 @@ class RegistrarIngresoVehiculo:
                 )
 
             # 8. Obtener la hora local y el día operativo de la sede.
-            ahora = datetime.now(
-                ZoneInfo(sede_bloqueada.zona_horaria)
-            )
+            ahora = datetime.now(ZoneInfo(sede_bloqueada.zona_horaria))
 
             dia_operativo = calcular_dia_operativo(
                 fecha_hora=ahora,
@@ -245,13 +241,9 @@ class RegistrarIngresoVehiculo:
             self.repositorio.guardar_ingreso(nuevo_ingreso)
 
             mensaje_exito = (
-                f"Reingreso autorizado para {placa} "
-                f"({tipo_vehiculo.value}). Pase del día vigente."
+                f"Reingreso autorizado para {placa} ({tipo_vehiculo.value}). Pase del día vigente."
                 if es_reingreso
-                else (
-                    f"Ingreso autorizado para {placa} "
-                    f"({tipo_vehiculo.value}). Barrera abierta."
-                )
+                else (f"Ingreso autorizado para {placa} ({tipo_vehiculo.value}). Barrera abierta.")
             )
 
             return ResultadoIngreso(

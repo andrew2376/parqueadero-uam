@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
@@ -23,8 +22,7 @@ class TarifaCrear(BaseModel):
 
         if not es_moto_gratuita and self.tarifa_nocturna >= self.tarifa_diurna:
             raise ValueError(
-                "La tarifa nocturna debe ser estrictamente menor "
-                "que la tarifa diurna."
+                "La tarifa nocturna debe ser estrictamente menor que la tarifa diurna."
             )
 
         return self

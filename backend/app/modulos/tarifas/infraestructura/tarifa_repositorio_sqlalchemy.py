@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from uuid import UUID
 
@@ -54,17 +53,14 @@ class TarifaRepositorioSQLAlchemy(TarifaRepositorio):
             # con ninguna versión existente.
             for modelo in modelos:
                 hay_superposicion = (
-                    tarifa.vigencia_hasta is None
-                    or modelo.vigencia_desde < tarifa.vigencia_hasta
+                    tarifa.vigencia_hasta is None or modelo.vigencia_desde < tarifa.vigencia_hasta
                 ) and (
-                    modelo.vigencia_hasta is None
-                    or modelo.vigencia_hasta > tarifa.vigencia_desde
+                    modelo.vigencia_hasta is None or modelo.vigencia_hasta > tarifa.vigencia_desde
                 )
 
                 if hay_superposicion:
                     raise ValueError(
-                        "La vigencia de la nueva tarifa se superpone "
-                        "con una versión existente."
+                        "La vigencia de la nueva tarifa se superpone con una versión existente."
                     )
 
             modelo_nuevo = TarifaModelo(
@@ -139,10 +135,7 @@ class TarifaRepositorioSQLAlchemy(TarifaRepositorio):
                 TarifaModelo.sede_id == sede_id,
                 TarifaModelo.tipo_vehiculo == tipo_vehiculo.strip().upper(),
                 TarifaModelo.vigencia_desde <= fecha,
-                (
-                    (TarifaModelo.vigencia_hasta.is_(None))
-                    | (TarifaModelo.vigencia_hasta > fecha)
-                ),
+                ((TarifaModelo.vigencia_hasta.is_(None)) | (TarifaModelo.vigencia_hasta > fecha)),
             )
             .order_by(TarifaModelo.version.desc())
             .first()
@@ -168,10 +161,7 @@ class TarifaRepositorioSQLAlchemy(TarifaRepositorio):
             .all()
         )
 
-        return [
-            self._convertir_a_dominio(modelo)
-            for modelo in modelos
-        ]
+        return [self._convertir_a_dominio(modelo) for modelo in modelos]
 
     def listar_versiones(
         self,
@@ -192,10 +182,7 @@ class TarifaRepositorioSQLAlchemy(TarifaRepositorio):
             .all()
         )
 
-        return [
-            self._convertir_a_dominio(modelo)
-            for modelo in modelos
-        ]
+        return [self._convertir_a_dominio(modelo) for modelo in modelos]
 
     def cerrar_vigencia(
         self,
@@ -219,14 +206,11 @@ class TarifaRepositorioSQLAlchemy(TarifaRepositorio):
 
             if fecha_fin <= modelo.vigencia_desde:
                 raise ValueError(
-                    "La fecha final debe ser posterior "
-                    "a la fecha inicial de vigencia."
+                    "La fecha final debe ser posterior a la fecha inicial de vigencia."
                 )
 
             if modelo.vigencia_hasta is not None:
-                raise ValueError(
-                    "La vigencia de esta tarifa ya fue cerrada."
-                )
+                raise ValueError("La vigencia de esta tarifa ya fue cerrada.")
 
             modelo.vigencia_hasta = fecha_fin
             modelo.activa = False

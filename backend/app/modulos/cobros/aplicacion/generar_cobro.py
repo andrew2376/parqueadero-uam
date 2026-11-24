@@ -1,4 +1,3 @@
-
 from datetime import date, datetime
 from uuid import UUID
 
@@ -14,9 +13,7 @@ from app.modulos.tarifas.infraestructura.tarifa_repositorio_sqlalchemy import (
 class GenerarCobro:
     def __init__(self, sesion: Session):
         self.sesion = sesion
-        self.calculador = CalcularTarifa(
-            TarifaRepositorioSQLAlchemy(sesion)
-        )
+        self.calculador = CalcularTarifa(TarifaRepositorioSQLAlchemy(sesion))
 
     def ejecutar(
         self,

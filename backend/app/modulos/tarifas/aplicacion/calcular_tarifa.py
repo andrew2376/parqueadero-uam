@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -29,9 +28,7 @@ class CalcularTarifa:
         zona = ZoneInfo(zona_horaria)
 
         if fecha_hora.tzinfo is None or fecha_hora.utcoffset() is None:
-            raise ValueError(
-                "La fecha y hora del cálculo deben incluir zona horaria."
-            )
+            raise ValueError("La fecha y hora del cálculo deben incluir zona horaria.")
 
         fecha_local = fecha_hora.astimezone(zona)
 
@@ -43,8 +40,7 @@ class CalcularTarifa:
 
         if tarifa is None:
             raise ValueError(
-                "No existe una tarifa vigente para este vehículo "
-                "en la sede y fecha indicadas."
+                "No existe una tarifa vigente para este vehículo en la sede y fecha indicadas."
             )
 
         # No se valida tarifa.activa aquí:
@@ -64,9 +60,7 @@ class CalcularTarifa:
             "version_tarifa": tarifa.version,
             "tipo_vehiculo": tarifa.tipo_vehiculo,
             "franja_horaria": franja.value,
-            "tarifa_aplicada": (
-                f"{tarifa.tipo_vehiculo}_{franja.value}_V{tarifa.version}"
-            ),
+            "tarifa_aplicada": (f"{tarifa.tipo_vehiculo}_{franja.value}_V{tarifa.version}"),
             "valor_tarifa": valor,
             "fecha_hora": fecha_local,
         }
