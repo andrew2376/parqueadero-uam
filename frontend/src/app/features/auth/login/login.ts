@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -12,14 +13,16 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.css']
 })
 export class LoginComponent implements OnInit {
-  loginForm!: FormGroup;
+  readonly loginForm = inject(FormBuilder).nonNullable.group({
+    username: ['', Validators.required],
+    password: ['', Validators.required]
+  });
   cargando = false;
   errorMensaje = '';
   mostrarPassword = false;
   returnUrl = '/panel';
 
   constructor(
-    private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
@@ -32,11 +35,6 @@ export class LoginComponent implements OnInit {
     }
 
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/panel';
-
-    this.loginForm = this.fb.group({
-      username: ['', [Validators.required]],
-      password: ['', [Validators.required]]
-    });
   }
 
   get usernameInvalido(): boolean {
@@ -54,6 +52,8 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.cargando) return;
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -62,17 +62,19 @@ export class LoginComponent implements OnInit {
     this.cargando = true;
     this.errorMensaje = '';
 
-    this.authService.login(this.loginForm.value).subscribe({
+    this.authService.login(this.loginForm.getRawValue()).subscribe({
       next: () => {
         this.cargando = false;
         this.router.navigateByUrl(this.returnUrl);
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         this.cargando = false;
         if (err.status === 401) {
           this.errorMensaje = 'Usuario o contraseña incorrectos.';
+        } else if (err.status === 0 || err.status >= 500) {
+          this.errorMensaje = 'No se pudo conectar con el servidor. Intenta nuevamente.';
         } else {
-          this.errorMensaje = 'No fue posible iniciar sesión. Verifica las credenciales.';
+          this.errorMensaje = 'No fue posible iniciar sesión. Intenta nuevamente.';
         }
       }
     });

@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 from app.configuracion import obtener_configuracion
 from app.infraestructura.base_datos import modelos as modelos_registrados  # noqa: F401
+from app.infraestructura.base_datos.conexion import obtener_sesion
 from app.modulos.accesos.presentacion.ingreso_router import (
     router as router_ingreso,
 )
@@ -12,8 +14,19 @@ from app.modulos.accesos.presentacion.reingreso_router import (
 from app.modulos.auditoria.presentacion.auditoria_router import (
     router as router_auditoria,
 )
+from app.modulos.autenticacion.dominio.usuario_repositorio import (
+    RepositorioUsuariosNoDisponible,
+    UsuarioRepositorio,
+)
+from app.modulos.autenticacion.infraestructura.usuario_repositorio_sqlalchemy import (
+    UsuarioRepositorioSQLAlchemy,
+)
 from app.modulos.autenticacion.presentacion.auth_router import (
     router as router_auth,
+)
+from app.modulos.autenticacion.presentacion.dependencias_auth import (
+    obtener_repositorio_usuario,
+    responder_repositorio_no_disponible,
 )
 from app.modulos.carriles.presentacion.carril_router import (
     router as router_carriles,
@@ -44,6 +57,20 @@ aplicacion = FastAPI(
     title=configuracion.nombre_aplicacion,
     version="0.1.0",
     docs_url="/docs",
+)
+
+
+def obtener_repositorio_usuario_postgresql(
+    sesion: Session = Depends(obtener_sesion),
+) -> UsuarioRepositorio:
+    return UsuarioRepositorioSQLAlchemy(sesion)
+
+
+aplicacion.dependency_overrides[obtener_repositorio_usuario] = (
+    obtener_repositorio_usuario_postgresql
+)
+aplicacion.add_exception_handler(
+    RepositorioUsuariosNoDisponible, responder_repositorio_no_disponible
 )
 
 aplicacion.add_middleware(
