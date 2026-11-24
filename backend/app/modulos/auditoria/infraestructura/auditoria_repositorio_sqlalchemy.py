@@ -67,11 +67,7 @@ class AuditoriaRepositorioSQLAlchemy(AuditoriaRepositorio):
 
         limite_seguro = max(1, min(limite, 500))
 
-        modelos = (
-            consulta.order_by(AuditoriaModelo.fecha_hora.desc())
-            .limit(limite_seguro)
-            .all()
-        )
+        modelos = consulta.order_by(AuditoriaModelo.fecha_hora.desc()).limit(limite_seguro).all()
 
         return [self._convertir_a_dominio(modelo) for modelo in modelos]
 

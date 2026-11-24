@@ -58,11 +58,7 @@ class EventoLecturaRepositorioFake(EventoLecturaRepositorio):
         return self.eventos.get(evento_id)
 
     def listar_por_sede(self, sede_id):
-        return [
-            evento
-            for evento in self.eventos.values()
-            if evento.sede_id == sede_id
-        ]
+        return [evento for evento in self.eventos.values() if evento.sede_id == sede_id]
 
     def listar_filtrado(
         self,
@@ -79,46 +75,22 @@ class EventoLecturaRepositorioFake(EventoLecturaRepositorio):
 
         if placa:
             placa_normalizada = placa.strip().upper()
-            eventos = [
-                evento
-                for evento in eventos
-                if evento.placa == placa_normalizada
-            ]
+            eventos = [evento for evento in eventos if evento.placa == placa_normalizada]
 
         if sede_id:
-            eventos = [
-                evento
-                for evento in eventos
-                if evento.sede_id == sede_id
-            ]
+            eventos = [evento for evento in eventos if evento.sede_id == sede_id]
 
         if estado:
-            eventos = [
-                evento
-                for evento in eventos
-                if evento.estado == estado
-            ]
+            eventos = [evento for evento in eventos if evento.estado == estado]
 
         if origen:
-            eventos = [
-                evento
-                for evento in eventos
-                if evento.origen == origen
-            ]
+            eventos = [evento for evento in eventos if evento.origen == origen]
 
         if fecha_desde:
-            eventos = [
-                evento
-                for evento in eventos
-                if evento.fecha_hora >= fecha_desde
-            ]
+            eventos = [evento for evento in eventos if evento.fecha_hora >= fecha_desde]
 
         if fecha_hasta:
-            eventos = [
-                evento
-                for evento in eventos
-                if evento.fecha_hora <= fecha_hasta
-            ]
+            eventos = [evento for evento in eventos if evento.fecha_hora <= fecha_hasta]
 
         # Ordenar por fecha descendente
         eventos.sort(
@@ -131,9 +103,10 @@ class EventoLecturaRepositorioFake(EventoLecturaRepositorio):
 
         # Aplicar paginación
         desplazamiento = (pagina - 1) * limite
-        eventos_paginados = eventos[desplazamiento:desplazamiento + limite]
+        eventos_paginados = eventos[desplazamiento : desplazamiento + limite]
 
         return eventos_paginados, total
+
 
 @pytest.fixture
 def entorno():

@@ -13,4 +13,3 @@ class AuditoriaRespuesta(BaseModel):
     entidad_id: str
     fecha_hora: datetime
     detalles: dict
-    

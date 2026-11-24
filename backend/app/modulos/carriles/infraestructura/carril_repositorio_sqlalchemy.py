@@ -47,19 +47,19 @@ class CarrilRepositorioSQLAlchemy(CarrilRepositorio):
         return [self._convertir_a_dominio(modelo) for modelo in modelos]
 
     def actualizar(self, carril: Carril) -> Carril:
-     modelo = self.sesion.get(CarrilModelo, carril.id)
+        modelo = self.sesion.get(CarrilModelo, carril.id)
 
-     if modelo is None:
-        raise ValueError("El carril no existe.")
+        if modelo is None:
+            raise ValueError("El carril no existe.")
 
-        modelo.nombre = carril.nombre
-        modelo.tipo = carril.tipo.value
-        modelo.activo = carril.activo
+            modelo.nombre = carril.nombre
+            modelo.tipo = carril.tipo.value
+            modelo.activo = carril.activo
 
-        self.sesion.flush()
-        self.sesion.refresh(modelo)
+            self.sesion.flush()
+            self.sesion.refresh(modelo)
 
-        return self._convertir_a_dominio(modelo)
+            return self._convertir_a_dominio(modelo)
 
     @staticmethod
     def _convertir_a_dominio(modelo: CarrilModelo) -> Carril:

@@ -149,9 +149,7 @@ def cambiar_estado_carril(
     carril_id: UUID,
     datos: CarrilCambiarEstado,
     sesion: Session = Depends(obtener_sesion),
-    usuario_actual: Usuario = Depends(
-        requerir_rol(RolUsuario.ADMINISTRADOR)
-    ),
+    usuario_actual: Usuario = Depends(requerir_rol(RolUsuario.ADMINISTRADOR)),
 ):
     repositorio_carril = CarrilRepositorioSQLAlchemy(sesion)
     repositorio_auditoria = AuditoriaRepositorioSQLAlchemy(sesion)

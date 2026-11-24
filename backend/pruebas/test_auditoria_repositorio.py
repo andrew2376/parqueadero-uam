@@ -154,4 +154,3 @@ def test_consultar_auditorias_por_fecha_y_limite():
     finally:
         sesion.close()
         motor.dispose()
-        
