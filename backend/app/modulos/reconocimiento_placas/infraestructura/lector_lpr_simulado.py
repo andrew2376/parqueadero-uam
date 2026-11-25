@@ -51,12 +51,14 @@ class LectorLPRSimulado(LectorLPRPuerto):
         self.confianza_fija = confianza
 
     @classmethod
-    def para_escenario(cls, escenario: EscenarioSimulacion) -> "LectorLPRSimulado":
+    def para_escenario(
+        cls, escenario: EscenarioSimulacion, placa: str | None = None
+    ) -> "LectorLPRSimulado":
         match escenario:
             case EscenarioSimulacion.ALTA:
-                return cls(placa_fija="abc-123", confianza_fija=95.0)
+                return cls(placa_fija=placa or "abc-123", confianza_fija=95.0)
             case EscenarioSimulacion.BAJA:
-                return cls(placa_fija="def-45a", confianza_fija=55.0)
+                return cls(placa_fija=placa or "def-45a", confianza_fija=55.0)
             case EscenarioSimulacion.SIN_LECTURA:
                 return cls(placa_fija="", confianza_fija=0.0)
 

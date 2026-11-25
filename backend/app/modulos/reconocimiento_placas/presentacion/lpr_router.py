@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -8,6 +9,7 @@ from app.infraestructura.base_datos.conexion import obtener_sesion
 from app.modulos.autenticacion.dominio.usuario import RolUsuario
 from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
 from app.modulos.carriles.dominio.carril import TipoCarril
+from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 from app.modulos.carriles.infraestructura.carril_repositorio_sqlalchemy import (
     CarrilRepositorioSQLAlchemy,
 )
@@ -33,6 +35,7 @@ from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado impor
     LectorLPRSimulado,
 )
 from app.modulos.reconocimiento_placas.presentacion.esquemas_lpr import (
+    CarrilMixtoRespuesta,
     DireccionCamara,
     EventoLecturaRespuesta,
     LecturaLPREsquema,
@@ -40,6 +43,8 @@ from app.modulos.reconocimiento_placas.presentacion.esquemas_lpr import (
     SimulacionLPRRespuesta,
     ValidarLecturaManualSolicitud,
 )
+from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
+from app.modulos.vehiculos.dominio.vehiculo import clasificar_placa
 
 router = APIRouter(
     prefix="/lecturas-lpr",
@@ -131,6 +136,31 @@ def registrar_lectura_automatica(
     return evento
 
 
+@router.get(
+    "/carriles-mixtos",
+    dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
+    response_model=list[CarrilMixtoRespuesta],
+)
+def listar_carriles_mixtos(
+    sede_id: UUID | None = None,
+    sesion: Session = Depends(obtener_sesion),
+) -> list[CarrilMixtoRespuesta]:
+    consulta = (
+        select(
+            CarrilModelo.id,
+            CarrilModelo.sede_id,
+            CarrilModelo.nombre,
+            SedeModelo.nombre.label("nombre_sede"),
+        )
+        .join(SedeModelo, SedeModelo.id == CarrilModelo.sede_id)
+        .where(CarrilModelo.activo.is_(True), CarrilModelo.tipo == TipoCarril.MIXTO)
+        .order_by(SedeModelo.nombre, CarrilModelo.nombre, CarrilModelo.id)
+    )
+    if sede_id is not None:
+        consulta = consulta.where(CarrilModelo.sede_id == sede_id)
+    return [CarrilMixtoRespuesta(**fila) for fila in sesion.execute(consulta).mappings()]
+
+
 @router.post(
     "/simulacion",
     dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
@@ -141,6 +171,7 @@ def simular_lectura_de_entrada(
     carril_id: UUID,
     escenario: EscenarioSimulacion = EscenarioSimulacion.ALTA,
     direccion: DireccionCamara = DireccionCamara.ENTRADA,
+    placa: str | None = None,
     sesion: Session = Depends(obtener_sesion),
 ) -> SimulacionLPRRespuesta:
     carril = CarrilRepositorioSQLAlchemy(sesion).obtener_por_id(carril_id)
@@ -156,7 +187,13 @@ def simular_lectura_de_entrada(
             status.HTTP_409_CONFLICT, "El carril no está habilitado para esta cámara."
         )
 
-    lector = LectorLPRSimulado.para_escenario(escenario)
+    if escenario != EscenarioSimulacion.SIN_LECTURA and placa is not None:
+        try:
+            clasificar_placa(placa)
+        except ValueError as error:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
+
+    lector = LectorLPRSimulado.para_escenario(escenario, placa)
     lectura, evento = capturar_y_registrar(carril_id, lector, sesion)
     return SimulacionLPRRespuesta(
         **EventoLecturaRespuesta.model_validate(evento, from_attributes=True).model_dump(),

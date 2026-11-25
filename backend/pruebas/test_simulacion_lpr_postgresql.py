@@ -54,6 +54,12 @@ def test_capturas_lpr_autenticadas_y_persistidas(conexion_postgresql, monkeypatc
                 vigencia_desde=datetime.now(UTC) - timedelta(days=1),
             )
         )
+        sesion.add_all(
+            [
+                CarrilModelo(sede_id=sede_id, nombre="Mixto inactivo", tipo="MIXTO", activo=False),
+                CarrilModelo(sede_id=sede_id, nombre="Solo entrada", tipo="ENTRADA"),
+            ]
+        )
         for rol, username in usuarios.items():
             sesion.add(
                 UsuarioModelo(
@@ -72,6 +78,7 @@ def test_capturas_lpr_autenticadas_y_persistidas(conexion_postgresql, monkeypatc
     capturas = {}
     tokens = {}
     with TestClient(aplicacion) as cliente:
+        assert cliente.get(f"{prefijo}/carriles-mixtos").status_code == 401
         for headers in ({}, {"Authorization": "Bearer invalido"}):
             assert cliente.post(ruta, params=params, headers=headers).status_code == 401
             assert (
@@ -120,6 +127,53 @@ def test_capturas_lpr_autenticadas_y_persistidas(conexion_postgresql, monkeypatc
                 assert datos["requiere_confirmacion_manual"] is (escenario != "alta")
                 assert UUID(datos["id"]) not in capturas
                 capturas[UUID(datos["id"])] = datos
+
+        catalogo = cliente.get(
+            f"{prefijo}/carriles-mixtos", params={"sede_id": str(sede_id)}, headers=headers
+        )
+        assert catalogo.status_code == 200
+        assert catalogo.json() == [
+            {
+                "id": str(carril_id),
+                "sede_id": str(sede_id),
+                "nombre": "Entrada",
+                "nombre_sede": f"Prueba LPR {sede_id}",
+            }
+        ]
+        for escenario, placa, normalizada, tipo, confianza in (
+            ("alta", " xyz-789 ", "XYZ789", "CARRO", 95),
+            ("alta", " klr-65a ", "KLR65A", "MOTO", 95),
+            ("baja", " mto-12b ", "MTO12B", "MOTO", 55),
+            ("baja", " def-454 ", "DEF454", "CARRO", 55),
+        ):
+            respuesta = cliente.post(
+                ruta,
+                params={**params, "escenario": escenario, "placa": placa},
+                headers=headers,
+            )
+            assert respuesta.status_code == 201, respuesta.text
+            datos = respuesta.json()
+            assert (datos["placa"], datos["tipo_vehiculo"], datos["confianza"]) == (
+                normalizada,
+                tipo,
+                confianza,
+            )
+            assert datos["requiere_confirmacion_manual"] is (escenario == "baja")
+            capturas[UUID(datos["id"])] = datos
+
+        respuesta = cliente.post(
+            ruta,
+            params={**params, "escenario": "sin-lectura", "placa": "XYZ789"},
+            headers=headers,
+        )
+        assert respuesta.status_code == 201
+        datos = respuesta.json()
+        assert datos["placa"] is None and datos["confianza"] == 0
+        capturas[UUID(datos["id"])] = datos
+        assert (
+            cliente.post(ruta, params={**params, "placa": "123456"}, headers=headers).status_code
+            == 422
+        )
 
         assert (
             cliente.post(ruta, params={**params, "escenario": "otro"}, headers=headers).status_code

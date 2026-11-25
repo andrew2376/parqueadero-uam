@@ -29,6 +29,9 @@ describe('Camaras LPR del carril mixto', () => {
     http.expectOne(`${API_BASE_URL}/carriles/${carril}`).flush({
       id: carril, sede_id: 'sede', activo: true, tipo: 'MIXTO', nombre: 'Mixto'
     });
+    const sedes = http.expectOne(req => req.url === `${API_BASE_URL}/lecturas-lpr/carriles-mixtos`);
+    expect(sedes.request.params.get('sede_id')).toBe('sede');
+    sedes.flush([{ id: carril, sede_id: 'sede', nombre: 'Mixto', nombre_sede: 'Sede demo' }]);
     fixture.detectChanges();
   });
 
@@ -91,24 +94,34 @@ describe('Camaras LPR del carril mixto', () => {
     expect(fixture.componentInstance.resultadoIngreso).toBeNull();
     expect(fixture.nativeElement.querySelector('.barrier-result-box').textContent).toContain('BARRERA CERRADA');
   });
-  it('confirma la placa de salida antes de solicitar la decision real', () => {
+  it('envia a salida la placa corregida en el formulario y confirmada por FastAPI', () => {
     fixture.componentInstance.seleccionarCamara('SALIDA');
     const captura = capturar('baja');
     expect(captura.request.params.get('direccion')).toBe('SALIDA');
     captura.flush({ id: 'evento', direccion: 'SALIDA', ...casos[1][1] });
-    fixture.componentInstance.onRegistrarIngreso();
-    const manual = http.expectOne(`${API_BASE_URL}/lecturas-lpr/manual`);
+    fixture.detectChanges();
+    const placa: HTMLInputElement = fixture.nativeElement.querySelector('#placa');
+    placa.value = 'def-454';
+    placa.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const registrar: HTMLButtonElement = fixture.nativeElement.querySelector('.btn-register');
+    expect(registrar.textContent).toContain('Registrar salida');
+    expect(registrar.disabled).toBe(false);
     http.expectNone(`${API_BASE_URL}/estancias/salida`);
-    manual.flush({ placa: 'DEF45A', estado: 'EXITOSA' });
-    http.expectOne(`${API_BASE_URL}/estancias/salida`).flush({
-      autorizado: false, decision_barrera: 'DENEGAR', motivo: 'Pago pendiente'
-    });
-    expect(fixture.componentInstance.resultadoIngreso).toEqual({
-      permitido: false, estadoBarrera: 'CERRADA', mensaje: 'Pago pendiente'
-    });
+    registrar.click();
+    const manual = http.expectOne(`${API_BASE_URL}/lecturas-lpr/manual`);
+    expect(manual.request.body).toEqual({ carril_id: carril, placa: 'def-454' });
+    http.expectNone(`${API_BASE_URL}/estancias/salida`);
+    manual.flush({ placa: 'DEF454', estado: 'EXITOSA' });
+    const salida = http.expectOne(`${API_BASE_URL}/estancias/salida`);
+    expect(salida.request.body).toEqual({ sede_id: 'sede', placa: 'DEF454' });
+    salida.flush({ autorizado: false, decision_barrera: 'DENEGAR', motivo: 'Pago pendiente' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.result-card').textContent).toContain('Pago pendiente');
+    expect(fixture.nativeElement.querySelector('.result-card').textContent).toContain('BARRERA CERRADA');
   });
   it('habilita la digitacion con el carril validado y detiene el ingreso si falla la confirmacion', () => {
-    expect(fixture.nativeElement.querySelector('#carril-lpr').value).toBe(carril);
+    expect(fixture.componentInstance.carril?.id).toBe(carril);
     expect(fixture.nativeElement.querySelector('#estado-carril').textContent).toContain('activo y verificado');
     const placa: HTMLInputElement = fixture.nativeElement.querySelector('#placa');
     expect(placa.readOnly).toBe(false);
@@ -125,7 +138,7 @@ describe('Camaras LPR del carril mixto', () => {
   });
 
   it('informa cuando el carril no existe y bloquea los controles de captura', () => {
-    fixture.componentInstance.cargarCarril();
+    fixture.componentInstance.cargarCarril(carril);
     http.expectOne(`${API_BASE_URL}/carriles/${carril}`).flush(
       null, { status: 404, statusText: 'Not Found' }
     );
@@ -133,5 +146,108 @@ describe('Camaras LPR del carril mixto', () => {
     expect(fixture.nativeElement.querySelector('#estado-carril').textContent).toContain('no existe');
     expect(fixture.nativeElement.querySelector('.btn-simulate').disabled).toBe(true);
     expect(fixture.nativeElement.querySelector('#placa').readOnly).toBe(true);
+  });
+  it('envia la placa opcional y la omite en el escenario sin lectura', () => {
+    fixture.componentInstance.placaSimulada.setValue(' xyz-789 ');
+    const alta = capturar('alta');
+    expect(alta.request.params.get('placa')).toBe('xyz-789');
+    alta.flush({ id: 'evento', direccion: 'ENTRADA', ...casos[0][1], placa: 'XYZ789' });
+    expect(fixture.componentInstance.ingresoForm.controls.placa.value).toBe('XYZ789');
+    const sinLectura = capturar('sin-lectura');
+    expect(sinLectura.request.params.has('placa')).toBe(false);
+    sinLectura.flush({ id: 'evento', direccion: 'ENTRADA', ...casos[2][1] });
+  });
+  it('mantiene el escenario y la confianza de la captura al cambiar los ajustes', () => {
+    fixture.componentInstance.placaSimulada.setValue('ABC123');
+    const captura = capturar('alta');
+    const selector: HTMLSelectElement = fixture.nativeElement.querySelector('#escenario-lpr');
+    selector.value = 'baja';
+    selector.dispatchEvent(new Event('change'));
+    captura.flush({ id: 'evento', direccion: 'ENTRADA', ...casos[0][1] });
+    fixture.detectChanges();
+    const revision = fixture.nativeElement.querySelector('#revision-titulo').parentElement;
+    expect(revision.textContent).toContain('Confianza alta');
+    expect(revision.textContent).toContain('95 %');
+    expect(revision.textContent).toContain('sigue siendo la anterior');
+    expect(revision.textContent).not.toContain('Confianza baja');
+
+    selector.value = 'alta';
+    selector.dispatchEvent(new Event('change'));
+    const placa: HTMLInputElement = fixture.nativeElement.querySelector('#placa-simulada');
+    placa.value = 'XYZ789';
+    placa.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(revision.textContent).toContain('sigue siendo la anterior');
+    expect(revision.textContent).toContain('ABC123');
+    http.expectNone(`${API_BASE_URL}/accesos/ingreso`);
+  });
+
+  it('limpia la lectura al cambiar de direccion y conserva sede y carril', () => {
+    capturar('alta').flush({ id: 'evento', direccion: 'ENTRADA', ...casos[0][1] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#estado-carril').textContent).toContain('Sede demo');
+    const botones = fixture.nativeElement.querySelectorAll('.camera-switch button');
+    botones[1].click();
+    fixture.detectChanges();
+    expect(botones[1].getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.componentInstance.carril?.id).toBe(carril);
+    expect(fixture.nativeElement.querySelector('#placa').value).toBe('');
+    expect(fixture.nativeElement.querySelector('.status-banner').textContent).not.toContain('ABC123');
+    expect(fixture.nativeElement.querySelector('.btn-register').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('.camera-active').textContent).toContain('Salida');
+    expect(fixture.nativeElement.querySelector('#estado-carril').textContent).toContain('Sede demo');
+    http.expectNone(`${API_BASE_URL}/estancias/salida`);
+  });
+
+});
+
+describe('Seleccion de carril sin UUID en el formulario', () => {
+  const primero = { id: 'c1', sede_id: 's1', nombre: 'Principal', nombre_sede: 'Sede Norte' };
+  const segundo = { id: 'c2', sede_id: 's2', nombre: 'Principal', nombre_sede: 'Sede Sur' };
+
+  function montar(sede?: string) {
+    TestBed.configureTestingModule({
+      imports: [ControlIngresoComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(sede ? { sede } : {}) } } },
+        { provide: AuthService, useValue: { usuarioActual: { id: 'operador', rol: 'OPERADOR' } } }
+      ]
+    });
+    const fixture = TestBed.createComponent(ControlIngresoComponent);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    const catalogo = http.expectOne(req => req.url === `${API_BASE_URL}/lecturas-lpr/carriles-mixtos`);
+    return { fixture, http, catalogo };
+  }
+
+  it('carga automaticamente el unico carril para la sede indicada', () => {
+    const { fixture, http, catalogo } = montar('s1');
+    expect(catalogo.request.params.get('sede_id')).toBe('s1');
+    catalogo.flush([primero]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.carril?.id).toBe(primero.id);
+    expect(fixture.nativeElement.querySelector('#carril-lpr')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.btn-simulate').disabled).toBe(false);
+    http.verify();
+  });
+
+  it('espera una seleccion por nombre cuando hay varios carriles', () => {
+    const { fixture, http, catalogo } = montar();
+    expect(catalogo.request.params.has('sede_id')).toBe(false);
+    catalogo.flush([primero, segundo]);
+    fixture.detectChanges();
+    const selector: HTMLSelectElement = fixture.nativeElement.querySelector('#carril-lpr');
+    expect(selector.options[1].text).toContain('Sede Norte');
+    expect(selector.options[2].text).toContain('Sede Sur');
+    expect(fixture.componentInstance.carril).toBeNull();
+    selector.value = segundo.id;
+    selector.dispatchEvent(new Event('change'));
+    http.expectOne(`${API_BASE_URL}/carriles/${segundo.id}`).flush({
+      ...segundo, tipo: 'MIXTO', activo: true
+    });
+    expect(fixture.componentInstance.carril?.sede_id).toBe(segundo.sede_id);
+    http.verify();
   });
 });

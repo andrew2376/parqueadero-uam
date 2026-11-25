@@ -1,155 +1,138 @@
 <div class="control-ingreso-page">
-  <!-- Cabecera de la sección -->
-  <div class="page-header">
-    <div class="header-info">
-      <h1 class="header-title">Control de acceso</h1>
-      <p class="header-subtitle">Reconocimiento de placas y verificación manual</p>
-    </div>
-  </div>
+  <header class="page-header">
+    <h1 class="header-title">Control de acceso</h1>
+    <p class="header-subtitle">Selecciona la c&aacute;mara, revisa la placa y registra el movimiento.</p>
+  </header>
 
-  <section class="card lane-card" aria-label="Configuraci&oacute;n de carril">
-    <div class="form-group">
-      <label for="carril-lpr">UUID del carril MIXTO</label>
-      <div class="lane-field">
-        <input id="carril-lpr" [formControl]="identificadorCarril" [readOnly]="procesando"
-          aria-describedby="estado-carril" />
-        <button type="button" [disabled]="procesando" (click)="cargarCarril()">Cargar carril</button>
+  <section class="card lane-card" aria-labelledby="direccion-titulo">
+    <h2 class="card-title" id="direccion-titulo">1. Seleccionar direcci&oacute;n</h2>
+    <div class="direction-controls">
+      <div class="camera-switch" role="group" aria-label="Direcci&oacute;n del movimiento">
+        <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'ENTRADA'"
+          (click)="seleccionarCamara('ENTRADA')">Entrada</button>
+        <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'SALIDA'"
+          (click)="seleccionarCamara('SALIDA')">Salida</button>
       </div>
+      @if (carriles.length > 1) {
+        <div class="form-group lane-field">
+          <label for="carril-lpr">Carril MIXTO</label>
+          <select id="carril-lpr" #selectorCarril [value]="carril?.id ?? ''"
+            [disabled]="procesando" aria-describedby="estado-carril"
+            (change)="cargarCarril(selectorCarril.value)">
+            <option value="">Selecciona un carril</option>
+            @for (opcion of carriles; track opcion.id) {
+              <option [value]="opcion.id">{{ opcion.nombre_sede }} &middot; {{ opcion.nombre }}</option>
+            }
+          </select>
+        </div>
+      } @else if (!carril && !procesando) {
+        <div class="lane-field"><button type="button" (click)="cargarCarriles()">Buscar carriles</button></div>
+      }
     </div>
+    <p class="camera-active"><strong>C&aacute;mara activa:</strong> {{ direccion === 'ENTRADA' ? 'Entrada' : 'Salida' }}</p>
     <p id="estado-carril" role="status" [class.lane-ready]="carril">
-      @if (carril) { <strong>{{ carril.nombre }} &middot; </strong> }{{ estadoCarril }}
+      @if (carril) {
+        <strong>{{ nombreSede ?? 'Nombre de sede no disponible' }} &middot; {{ carril.nombre }}</strong>
+        <span> &middot; </span>
+      }
+      {{ estadoCarril }}
     </p>
   </section>
 
-  <!-- Contenedor principal de dos columnas según Figma -->
   <div class="ingreso-grid">
-    <!-- Columna Izquierda: Lectura de placa / Cámara LPR -->
-    <section class="card lpr-card">
+    <section class="card" aria-labelledby="simulador-titulo">
       <div class="card-header">
-        <h2 class="card-title">Cámara {{ direccion }}</h2>
-        <span class="card-subtitle">Simulador LPR</span>
+        <h2 class="card-title" id="simulador-titulo">2. Simulador de c&aacute;mara</h2>
+        <p class="card-subtitle">Estos ajustes controlan la pr&oacute;xima captura de demostraci&oacute;n.</p>
       </div>
-
       <div class="camera-controls">
-        <div class="camera-switch" role="group" aria-label="C&aacute;mara">
-          <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'ENTRADA'"
-            (click)="seleccionarCamara('ENTRADA')">Entrada</button>
-          <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'SALIDA'"
-            (click)="seleccionarCamara('SALIDA')">Salida</button>
-        </div>
         <div class="form-group">
-          <label for="escenario-lpr">Escenario de simulaci&oacute;n</label>
+          <label for="escenario-lpr">Escenario de la pr&oacute;xima captura</label>
           <select id="escenario-lpr" [formControl]="escenario">
             <option value="alta">Confianza alta</option>
             <option value="baja">Confianza baja</option>
             <option value="sin-lectura">Sin lectura</option>
           </select>
         </div>
-        <button type="button" class="btn-simulate" [disabled]="procesando || !carril"
-          (click)="onSimularLectura()">Simular nueva lectura</button>
-      </div>
-
-      <div class="camera-viewport">
-        <span class="viewport-tag">VISTA SIMULADA</span>
-        <div class="car-illustration" aria-hidden="true">
-          <div class="car-body">
-            <div class="car-windshield"></div>
-            <div class="plate-badge-preview">
-              <span class="plate-text">{{ lectura?.placa || '&mdash;' }}</span>
-            </div>
+        @if (escenario.value !== 'sin-lectura') {
+          <div class="form-group">
+            <label for="placa-simulada">Placa a simular (opcional)</label>
+            <input id="placa-simulada" [formControl]="placaSimulada" [readOnly]="procesando"
+              placeholder="AAA123 o AAA12A" maxlength="16" />
           </div>
-        </div>
+        }
+        <button type="button" class="btn-simulate" [disabled]="procesando || !carril"
+          (click)="onSimularLectura()">Simular lectura</button>
       </div>
+    </section>
 
+    <section class="card" aria-labelledby="revision-titulo">
+      <h2 class="card-title" id="revision-titulo">3. Revisar lectura recibida</h2>
       <div class="status-banner" role="status" [class.low-confidence]="lectura?.requiere_confirmacion_manual">
         <div class="status-content">
           @if (lectura; as captura) {
+            @if (ultimaSimulacion; as simulacion) {
+              <span class="banner-confidence">Escenario de la &uacute;ltima captura: {{ nombresEscenario[simulacion.escenario] }}</span>
+            }
             <strong class="banner-title">{{ captura.placa ? 'Placa detectada: ' + captura.placa : 'Sin lectura' }}</strong>
-            <span class="banner-confidence">{{ tipoDetectado }} &middot; Confianza {{ captura.confianza }} %</span>
+            <span>{{ tipoDetectado }} &middot; Confianza recibida: {{ captura.confianza }} %</span>
             @if (captura.requiere_confirmacion_manual) {
-              <span>Confirma o corrige la placa antes de continuar.</span>
+              <span>Se requiere confirmaci&oacute;n manual de la placa.</span>
             }
           } @else {
-            <span>{{ carril ? 'Pulsa Simular nueva lectura o digita la placa.' : 'Carga un carril MIXTO para simular.' }}</span>
+            <span>{{ carril ? 'Todavía no hay una captura. Puedes simular o digitar la placa.' : 'Selecciona un carril para continuar.' }}</span>
           }
         </div>
       </div>
-    </section>
+      @if (ajustesPendientes) {
+        <p class="camera-message">Cambiaste los ajustes de la pr&oacute;xima captura. La lectura mostrada sigue siendo la anterior.</p>
+      }
 
-    <!-- Columna Derecha: Verificar {{ operacion }} -->
-    <section class="card verify-card">
-      <div class="card-header">
-        <h2 class="card-title">Verificar {{ operacion }}</h2>
-        <span class="card-subtitle">Confirma o corrige los datos detectados.</span>
-      </div>
-
-      <form [formGroup]="ingresoForm" (ngSubmit)="onRegistrarIngreso()" class="verify-form">
-        <!-- Campo: Placa normalizada -->
+      <form id="movimiento-form" [formGroup]="ingresoForm" (ngSubmit)="onRegistrarIngreso()" class="verify-form">
         <div class="form-group">
           <label for="placa">Placa normalizada</label>
           <div class="input-wrapper">
-            <input
-              id="placa"
-              type="text"
-              formControlName="placa"
-              placeholder="ABC123"
-              maxlength="10"
-              [readOnly]="procesando || !carril"
-              (input)="onPlacaManualChange()"
-            />
+            <input id="placa" type="text" formControlName="placa" placeholder="ABC123" maxlength="10"
+              [readOnly]="procesando || !carril" (input)="onPlacaManualChange()" />
           </div>
+          <span class="card-subtitle">Puedes digitar o corregir la placa. El servidor la confirma al registrar.</span>
         </div>
-
-        <!-- Campo: Tipo de vehículo -->
-        <div class="form-group">
-          <label for="tipoVehiculo">Tipo de vehículo</label>
-          <div class="input-wrapper readonly-wrapper">
-            <input
-              id="tipoVehiculo"
-              type="text"
-              formControlName="tipoVehiculoTexto"
-              readonly
-            />
-          </div>
-        </div>
-
-        <div class="cupos-banner">
-          <span class="cupos-text">
-            Cupos disponibles: carros {{ cupos.CARRO ?? 'sin dato' }},
-            motos {{ cupos.MOTO ?? 'sin dato' }}
-          </span>
-        </div>
-
-        @if (mensaje) {
-          <p class="camera-message" role="alert">{{ mensaje }}</p>
-        }
-
-        <!-- Mensaje de feedback de barrera tras registrar -->
-        @if (carril) {
-          <div class="barrier-result-box" [class.allowed]="resultadoIngreso?.permitido" [class.denied]="!resultadoIngreso?.permitido">
-            <div class="barrier-header-row">
-              <span class="traffic-light-dot" [class.green]="resultadoIngreso?.permitido" [class.red]="!resultadoIngreso?.permitido"></span>
-              <strong>{{ resultadoIngreso?.permitido ? 'BARRERA LEVANTADA (ABIERTA)' : 'BARRERA CERRADA' }}</strong>
-            </div>
-            <p class="barrier-msg">{{ resultadoIngreso?.mensaje }}</p>
-          </div>
-        }
-
-        <!-- Botón Registrar ingreso -->
-        <button
-          type="submit"
-          class="btn-register"
-          [disabled]="procesando || !carril || ingresoForm.invalid"
-        >
-          @if (confirmandoAcceso) {
-            <span>Registrando acceso...</span>
-          } @else {
-            <span>Registrar {{ operacion }}</span>
-          }
-        </button>
-
-
       </form>
     </section>
   </div>
+
+  <section class="card movement-card" aria-labelledby="movimiento-titulo">
+    <h2 class="card-title" id="movimiento-titulo">4. Registrar movimiento</h2>
+    <button type="submit" form="movimiento-form" class="btn-register"
+      [disabled]="procesando || !carril || ingresoForm.invalid">
+      {{ confirmandoAcceso ? 'Registrando acceso...' : 'Registrar ' + operacion }}
+    </button>
+  </section>
+
+  <section class="card result-card" aria-labelledby="resultado-titulo">
+    <h2 class="card-title" id="resultado-titulo">5. Resultado</h2>
+    @if (mensaje) {
+      <p class="camera-message" role="alert">{{ mensaje }}</p>
+    }
+    <div class="barrier-result-box" role="status" [class.allowed]="resultadoIngreso?.permitido" [class.denied]="!resultadoIngreso?.permitido">
+      <div class="barrier-header-row">
+        <span class="traffic-light-dot" [class.green]="resultadoIngreso?.permitido" [class.red]="!resultadoIngreso?.permitido"></span>
+        <strong>{{ resultadoIngreso?.permitido ? 'BARRERA ABIERTA' : 'BARRERA CERRADA' }}</strong>
+      </div>
+      @if (resultadoIngreso; as resultado) {
+        <p class="barrier-msg"><strong>{{ resultado.permitido ? 'Movimiento autorizado' : 'Movimiento denegado' }}.</strong> {{ resultado.mensaje }}</p>
+      } @else {
+        <p class="barrier-msg">Sin autorizaci&oacute;n para el movimiento actual.</p>
+      }
+    </div>
+    @if (cupos.CARRO !== undefined || cupos.MOTO !== undefined) {
+      <div class="cupos-banner">
+        <span class="cupos-text">Cupos disponibles:
+          @if (cupos.CARRO !== undefined) { carros {{ cupos.CARRO }} }
+          @if (cupos.CARRO !== undefined && cupos.MOTO !== undefined) { &middot; }
+          @if (cupos.MOTO !== undefined) { motos {{ cupos.MOTO }} }
+        </span>
+      </div>
+    }
+  </section>
 </div>

@@ -13,6 +13,13 @@ export interface CarrilCamara {
   activo: boolean;
 }
 
+export interface CarrilMixtoDisponible {
+  id: string;
+  sede_id: string;
+  nombre: string;
+  nombre_sede: string;
+}
+
 export interface SolicitudIngreso {
   sedeId: string;
   carrilId: string;
@@ -65,9 +72,17 @@ export class IngresoService {
     return this.http.get<CarrilCamara>(`${API_BASE_URL}/carriles/${encodeURIComponent(id)}`);
   }
 
-  simularLectura(carrilId: string, escenario: EscenarioSimulacion, direccion: DireccionCamara): Observable<LecturaSimulada> {
+  listarCarrilesMixtos(sedeId: string | null): Observable<CarrilMixtoDisponible[]> {
+    return this.http.get<CarrilMixtoDisponible[]>(`${API_BASE_URL}/lecturas-lpr/carriles-mixtos`, {
+      params: sedeId ? { sede_id: sedeId } : {}
+    });
+  }
+
+  simularLectura(
+    carrilId: string, escenario: EscenarioSimulacion, direccion: DireccionCamara, placa: string
+  ): Observable<LecturaSimulada> {
     return this.http.post<LecturaSimulada>(`${API_BASE_URL}/lecturas-lpr/simulacion`, null, {
-      params: { carril_id: carrilId, escenario, direccion }
+      params: { carril_id: carrilId, escenario, direccion, ...(placa ? { placa } : {}) }
     });
   }
 

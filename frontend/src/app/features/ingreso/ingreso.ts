@@ -3,10 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Observable, finalize, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import {
-  CarrilCamara, DireccionCamara, EscenarioSimulacion, IngresoService, LecturaSimulada,
+  CarrilCamara, CarrilMixtoDisponible, DireccionCamara, EscenarioSimulacion, IngresoService, LecturaSimulada,
   ResultadoIngreso, ResultadoSalida
 } from '../../core/services/ingreso.service';
 import { TipoVehiculo } from '../../core/models/vehiculo.model';
@@ -30,10 +30,18 @@ export class ControlIngresoComponent implements OnInit {
     tipoVehiculoTexto: ['']
   });
   readonly escenario = new FormControl<EscenarioSimulacion>('alta', { nonNullable: true });
-  readonly identificadorCarril = new FormControl('', { nonNullable: true });
+  readonly placaSimulada = new FormControl('', { nonNullable: true });
+  readonly nombresEscenario: Record<EscenarioSimulacion, string> = {
+    alta: 'Confianza alta',
+    baja: 'Confianza baja',
+    'sin-lectura': 'Sin lectura'
+  };
+  carriles: CarrilMixtoDisponible[] = [];
+  nombreSede: string | null = null;
+  ultimaSimulacion: { escenario: EscenarioSimulacion; placa: string } | null = null;
   direccion: DireccionCamara = 'ENTRADA';
   carril: CarrilCamara | null = null;
-  estadoCarril = 'Introduce el UUID del carril MIXTO para habilitar las cámaras.';
+  estadoCarril = 'Buscando carriles MIXTO activos...';
   confirmandoAcceso = false;
   lectura: LecturaSimulada | null = null;
   resultadoIngreso: ResultadoSalida | null = null;
@@ -42,26 +50,47 @@ export class ControlIngresoComponent implements OnInit {
   cupos: Partial<Record<TipoVehiculo, number>> = {};
 
   ngOnInit(): void {
-    const id = this.route.snapshot.queryParamMap.get('carril');
-    if (id) {
-      this.identificadorCarril.setValue(id);
-      this.cargarCarril();
+    const parametros = this.route.snapshot.queryParamMap;
+    if (parametros.has('carril')) {
+      this.cargarCarril(parametros.get('carril')!);
+      return;
     }
+    this.cargarCarriles();
+  }
+
+  cargarCarriles(): void {
+    if (this.procesando) return;
+    this.estadoCarril = 'Buscando carriles MIXTO activos...';
+    this.ejecutar(
+      this.ingresoService.listarCarrilesMixtos(this.route.snapshot.queryParamMap.get('sede')),
+      carriles => {
+        this.carriles = carriles;
+        if (carriles.length === 1) {
+          const carril = carriles[0];
+          this.activarCarril({ ...carril, tipo: 'MIXTO', activo: true }, carril.nombre_sede);
+        } else {
+          this.estadoCarril = carriles.length
+            ? 'Selecciona un carril por nombre.'
+            : 'No hay carriles MIXTO activos disponibles.';
+        }
+      },
+      () => { this.estadoCarril = 'No se pudieron consultar los carriles.'; }
+    );
   }
 
   get operacion(): string {
     return this.direccion === 'ENTRADA' ? 'ingreso' : 'salida';
   }
 
-  cargarCarril(): void {
+  cargarCarril(id: string): void {
     if (this.procesando) return;
     this.carril = null;
+    this.nombreSede = null;
     this.cupos = {};
     this.limpiarCaptura();
     this.estadoCarril = 'Validando carril en el servidor...';
-    const id = this.identificadorCarril.value.trim();
-    if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) {
-      this.estadoCarril = 'Introduce un UUID de carril válido.';
+    if (!id) {
+      this.estadoCarril = 'Selecciona un carril por nombre.';
       return;
     }
     this.ejecutar(this.ingresoService.consultarCarril(id), carril => {
@@ -69,14 +98,31 @@ export class ControlIngresoComponent implements OnInit {
         this.estadoCarril = 'El carril debe estar activo y ser de tipo MIXTO.';
         return;
       }
-      this.carril = carril;
-      this.estadoCarril = 'Carril MIXTO activo y verificado';
-      this.actualizarCupos(carril);
+      const opcion = this.carriles.find(item => item.id === carril.id);
+      this.activarCarril(carril, opcion?.nombre_sede ?? null);
+      if (!opcion) {
+        this.ingresoService.listarCarrilesMixtos(carril.sede_id).pipe(
+          map(carriles => carriles.find(item => item.id === carril.id)?.nombre_sede ?? null),
+          catchError(() => of(null)),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(nombre => {
+          if (this.carril?.id !== carril.id) return;
+          this.nombreSede = nombre;
+          this.cdr.markForCheck();
+        });
+      }
     }, error => {
       this.estadoCarril = error instanceof HttpErrorResponse && error.status === 404
-        ? 'El carril no existe. Revisa el UUID.'
+        ? 'El carril no existe. Vuelve a elegir un carril.'
         : 'No se pudo verificar el carril con el servidor.';
     });
+  }
+
+  private activarCarril(carril: CarrilCamara, nombreSede: string | null): void {
+    this.carril = carril;
+    this.nombreSede = nombreSede;
+    this.estadoCarril = 'Carril MIXTO activo y verificado';
+    this.actualizarCupos(carril);
   }
 
   seleccionarCamara(direccion: DireccionCamara): void {
@@ -91,17 +137,31 @@ export class ControlIngresoComponent implements OnInit {
     return 'Sin clasificar';
   }
 
+  get ajustesPendientes(): boolean {
+    return this.ultimaSimulacion !== null && (
+      this.ultimaSimulacion.escenario !== this.escenario.value
+      || this.ultimaSimulacion.placa !== this.placaDeProximaSimulacion
+    );
+  }
+
+  private get placaDeProximaSimulacion(): string {
+    return this.escenario.value === 'sin-lectura' ? '' : this.placaSimulada.value.trim();
+  }
+
   onSimularLectura(): void {
     if (this.procesando || !this.carril) return;
     this.limpiarCaptura();
+    const escenario = this.escenario.value;
+    const placa = this.placaDeProximaSimulacion;
     this.ejecutar(
-      this.ingresoService.simularLectura(this.carril.id, this.escenario.value, this.direccion),
+      this.ingresoService.simularLectura(this.carril.id, escenario, this.direccion, placa),
       lectura => {
         if (lectura.direccion !== this.direccion) {
           this.mensaje = 'La respuesta no corresponde a la cámara seleccionada.';
           return;
         }
         this.lectura = lectura;
+        this.ultimaSimulacion = { escenario, placa };
         this.ingresoForm.setValue({
           placa: lectura.placa ?? '',
           tipoVehiculoTexto: lectura.placa ? this.tipoDetectado : ''
@@ -178,6 +238,7 @@ export class ControlIngresoComponent implements OnInit {
 
   private limpiarCaptura(): void {
     this.lectura = null;
+    this.ultimaSimulacion = null;
     this.resultadoIngreso = null;
     this.mensaje = '';
     this.ingresoForm.reset();

@@ -93,3 +93,10 @@ class SimulacionLPRRespuesta(EventoLecturaRespuesta):
     direccion: DireccionCamara
     tipo_vehiculo: TipoVehiculo | None
     requiere_confirmacion_manual: bool
+
+
+class CarrilMixtoRespuesta(BaseModel):
+    id: UUID
+    sede_id: UUID
+    nombre: str
+    nombre_sede: str
