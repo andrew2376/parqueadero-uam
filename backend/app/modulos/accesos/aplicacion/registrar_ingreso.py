@@ -11,6 +11,8 @@ from app.modulos.accesos.dominio.ingreso import (
     RegistroIngreso,
     ResultadoIngreso,
 )
+from app.modulos.carriles.dominio.carril import TipoCarril
+from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 from app.modulos.cobros.aplicacion.generar_cobro import GenerarCobro
 from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
@@ -122,6 +124,12 @@ class RegistrarIngresoVehiculo:
                     placa=placa,
                     tipo_vehiculo=tipo_vehiculo,
                 )
+
+            carril = self.sesion.get(CarrilModelo, carril_id, with_for_update=True)
+            if carril is None or carril.sede_id != sede_id:
+                raise ValueError("El carril no pertenece a la sede indicada.")
+            if not carril.activo or carril.tipo not in (TipoCarril.ENTRADA, TipoCarril.MIXTO):
+                raise ValueError("El carril no está habilitado para ingreso.")
 
             # 6. Comprobar anti-passback contra las estancias reales.
             estancia_activa = (

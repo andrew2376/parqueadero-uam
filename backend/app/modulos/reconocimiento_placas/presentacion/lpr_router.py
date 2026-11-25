@@ -35,7 +35,7 @@ from app.modulos.reconocimiento_placas.infraestructura.lector_lpr_simulado impor
     LectorLPRSimulado,
 )
 from app.modulos.reconocimiento_placas.presentacion.esquemas_lpr import (
-    CarrilMixtoRespuesta,
+    CarrilActivoRespuesta,
     DireccionCamara,
     EventoLecturaRespuesta,
     LecturaLPREsquema,
@@ -137,28 +137,29 @@ def registrar_lectura_automatica(
 
 
 @router.get(
-    "/carriles-mixtos",
+    "/carriles-activos",
     dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
-    response_model=list[CarrilMixtoRespuesta],
+    response_model=list[CarrilActivoRespuesta],
 )
-def listar_carriles_mixtos(
+def listar_carriles_activos(
     sede_id: UUID | None = None,
     sesion: Session = Depends(obtener_sesion),
-) -> list[CarrilMixtoRespuesta]:
+) -> list[CarrilActivoRespuesta]:
     consulta = (
         select(
             CarrilModelo.id,
             CarrilModelo.sede_id,
             CarrilModelo.nombre,
+            CarrilModelo.tipo,
             SedeModelo.nombre.label("nombre_sede"),
         )
         .join(SedeModelo, SedeModelo.id == CarrilModelo.sede_id)
-        .where(CarrilModelo.activo.is_(True), CarrilModelo.tipo == TipoCarril.MIXTO)
+        .where(CarrilModelo.activo.is_(True))
         .order_by(SedeModelo.nombre, CarrilModelo.nombre, CarrilModelo.id)
     )
     if sede_id is not None:
         consulta = consulta.where(CarrilModelo.sede_id == sede_id)
-    return [CarrilMixtoRespuesta(**fila) for fila in sesion.execute(consulta).mappings()]
+    return [CarrilActivoRespuesta(**fila) for fila in sesion.execute(consulta).mappings()]
 
 
 @router.post(
@@ -180,7 +181,7 @@ def simular_lectura_de_entrada(
     tipos_permitidos = (
         (TipoCarril.ENTRADA, TipoCarril.MIXTO)
         if direccion == DireccionCamara.ENTRADA
-        else (TipoCarril.MIXTO,)
+        else (TipoCarril.SALIDA, TipoCarril.MIXTO)
     )
     if not carril.activo or carril.tipo not in tipos_permitidos:
         raise HTTPException(

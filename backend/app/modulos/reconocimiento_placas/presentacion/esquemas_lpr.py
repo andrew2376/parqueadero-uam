@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, Field
 
+from app.modulos.carriles.dominio.carril import TipoCarril
 from app.modulos.eventos_lectura.dominio.evento_lectura import (
     EstadoEventoLectura,
     OrigenEventoLectura,
@@ -95,8 +96,9 @@ class SimulacionLPRRespuesta(EventoLecturaRespuesta):
     requiere_confirmacion_manual: bool
 
 
-class CarrilMixtoRespuesta(BaseModel):
+class CarrilActivoRespuesta(BaseModel):
     id: UUID
     sede_id: UUID
     nombre: str
     nombre_sede: str
+    tipo: TipoCarril

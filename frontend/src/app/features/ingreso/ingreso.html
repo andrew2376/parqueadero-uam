@@ -7,21 +7,27 @@
   <section class="card lane-card" aria-labelledby="direccion-titulo">
     <h2 class="card-title" id="direccion-titulo">1. Seleccionar direcci&oacute;n</h2>
     <div class="direction-controls">
-      <div class="camera-switch" role="group" aria-label="Direcci&oacute;n del movimiento">
-        <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'ENTRADA'"
-          (click)="seleccionarCamara('ENTRADA')">Entrada</button>
-        <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'SALIDA'"
-          (click)="seleccionarCamara('SALIDA')">Salida</button>
-      </div>
+      @if (carril) {
+        <div class="camera-switch" role="group" aria-label="Direcci&oacute;n del movimiento">
+          @if (camaraDisponible('ENTRADA')) {
+            <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'ENTRADA'"
+              (click)="seleccionarCamara('ENTRADA')">Entrada</button>
+          }
+          @if (camaraDisponible('SALIDA')) {
+            <button type="button" [disabled]="procesando" [attr.aria-pressed]="direccion === 'SALIDA'"
+              (click)="seleccionarCamara('SALIDA')">Salida</button>
+          }
+        </div>
+      }
       @if (carriles.length > 1) {
         <div class="form-group lane-field">
-          <label for="carril-lpr">Carril MIXTO</label>
+          <label for="carril-lpr">Carril</label>
           <select id="carril-lpr" #selectorCarril [value]="carril?.id ?? ''"
             [disabled]="procesando" aria-describedby="estado-carril"
             (change)="cargarCarril(selectorCarril.value)">
             <option value="">Selecciona un carril</option>
             @for (opcion of carriles; track opcion.id) {
-              <option [value]="opcion.id">{{ opcion.nombre_sede }} &middot; {{ opcion.nombre }}</option>
+              <option [value]="opcion.id">{{ opcion.nombre_sede }} &middot; {{ opcion.nombre }} ({{ opcion.tipo }})</option>
             }
           </select>
         </div>
@@ -29,7 +35,7 @@
         <div class="lane-field"><button type="button" (click)="cargarCarriles()">Buscar carriles</button></div>
       }
     </div>
-    <p class="camera-active"><strong>C&aacute;mara activa:</strong> {{ direccion === 'ENTRADA' ? 'Entrada' : 'Salida' }}</p>
+    <p class="camera-active"><strong>C&aacute;mara activa:</strong> {{ carril ? (direccion === 'ENTRADA' ? 'Entrada' : 'Salida') : 'Sin carril' }}</p>
     <p id="estado-carril" role="status" [class.lane-ready]="carril">
       @if (carril) {
         <strong>{{ nombreSede ?? 'Nombre de sede no disponible' }} &middot; {{ carril.nombre }}</strong>
@@ -61,7 +67,7 @@
               placeholder="AAA123 o AAA12A" maxlength="16" />
           </div>
         }
-        <button type="button" class="btn-simulate" [disabled]="procesando || !carril"
+        <button type="button" class="btn-simulate" [disabled]="procesando || !camaraDisponible(direccion)"
           (click)="onSimularLectura()">Simular lectura</button>
       </div>
     </section>
@@ -103,10 +109,14 @@
 
   <section class="card movement-card" aria-labelledby="movimiento-titulo">
     <h2 class="card-title" id="movimiento-titulo">4. Registrar movimiento</h2>
+    @if (camaraDisponible(direccion)) {
     <button type="submit" form="movimiento-form" class="btn-register"
       [disabled]="procesando || !carril || ingresoForm.invalid">
       {{ confirmandoAcceso ? 'Registrando acceso...' : 'Registrar ' + operacion }}
     </button>
+    } @else {
+      <p class="card-subtitle">Selecciona un carril para registrar un movimiento.</p>
+    }
   </section>
 
   <section class="card result-card" aria-labelledby="resultado-titulo">

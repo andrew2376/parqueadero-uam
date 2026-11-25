@@ -58,6 +58,7 @@ def test_capturas_lpr_autenticadas_y_persistidas(conexion_postgresql, monkeypatc
             [
                 CarrilModelo(sede_id=sede_id, nombre="Mixto inactivo", tipo="MIXTO", activo=False),
                 CarrilModelo(sede_id=sede_id, nombre="Solo entrada", tipo="ENTRADA"),
+                CarrilModelo(sede_id=sede_id, nombre="Solo salida", tipo="SALIDA"),
             ]
         )
         for rol, username in usuarios.items():
@@ -78,7 +79,7 @@ def test_capturas_lpr_autenticadas_y_persistidas(conexion_postgresql, monkeypatc
     capturas = {}
     tokens = {}
     with TestClient(aplicacion) as cliente:
-        assert cliente.get(f"{prefijo}/carriles-mixtos").status_code == 401
+        assert cliente.get(f"{prefijo}/carriles-activos").status_code == 401
         for headers in ({}, {"Authorization": "Bearer invalido"}):
             assert cliente.post(ruta, params=params, headers=headers).status_code == 401
             assert (
@@ -129,17 +130,19 @@ def test_capturas_lpr_autenticadas_y_persistidas(conexion_postgresql, monkeypatc
                 capturas[UUID(datos["id"])] = datos
 
         catalogo = cliente.get(
-            f"{prefijo}/carriles-mixtos", params={"sede_id": str(sede_id)}, headers=headers
+            f"{prefijo}/carriles-activos", params={"sede_id": str(sede_id)}, headers=headers
         )
         assert catalogo.status_code == 200
-        assert catalogo.json() == [
-            {
-                "id": str(carril_id),
-                "sede_id": str(sede_id),
-                "nombre": "Entrada",
-                "nombre_sede": f"Prueba LPR {sede_id}",
-            }
-        ]
+        opciones = catalogo.json()
+        assert {opcion["tipo"] for opcion in opciones} == {"ENTRADA", "SALIDA", "MIXTO"}
+        assert len(opciones) == 3
+        assert opciones[0] == {
+            "id": str(carril_id),
+            "sede_id": str(sede_id),
+            "nombre": "Entrada",
+            "nombre_sede": f"Prueba LPR {sede_id}",
+            "tipo": "MIXTO",
+        }
         for escenario, placa, normalizada, tipo, confianza in (
             ("alta", " xyz-789 ", "XYZ789", "CARRO", 95),
             ("alta", " klr-65a ", "KLR65A", "MOTO", 95),

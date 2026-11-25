@@ -2,6 +2,8 @@ from datetime import time
 from unittest.mock import patch
 from uuid import uuid4
 
+import pytest
+
 from app.modulos.accesos.aplicacion.registrar_ingreso import RegistrarIngresoVehiculo
 from app.modulos.accesos.dominio.acceso_repositorio import AccesoRepositorio
 from app.modulos.accesos.dominio.ingreso import (
@@ -9,6 +11,7 @@ from app.modulos.accesos.dominio.ingreso import (
     EstadoAcceso,
     RegistroIngreso,
 )
+from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 from app.modulos.cobros.aplicacion.generar_cobro import GenerarCobro
 from app.modulos.estancias.infraestructura.estancia_modelo import EstanciaModelo
 from app.modulos.sedes.infraestructura.sede_modelo import SedeModelo
@@ -79,13 +82,16 @@ class MockQuery:
 class MockSession:
     """Mock de SQLAlchemy Session para pruebas unitarias de ingreso."""
 
-    def __init__(self, sede: SedeModelo):
+    def __init__(self, sede: SedeModelo, carril: CarrilModelo):
         self.sede = sede
+        self.carril = carril
         self.estancias = []
 
-    def get(self, entity_class, entity_id):
+    def get(self, entity_class, entity_id, **kwargs):
         if entity_class == SedeModelo and entity_id == self.sede.id:
             return self.sede
+        if entity_class == CarrilModelo and self.carril and entity_id == self.carril.id:
+            return self.carril
         return None
 
     def query(self, entity_class, *args, **kwargs):
@@ -120,7 +126,12 @@ class TestCasoUsoIngreso:
         )
 
         self.repositorio = AccesoRepositorioEnMemoria()
-        self.sesion = MockSession(self.sede)
+        self.sesion = MockSession(
+            self.sede,
+            CarrilModelo(
+                id=self.carril_id, sede_id=self.sede_id, nombre="Entrada", tipo="MIXTO", activo=True
+            ),
+        )
 
         # Aislar la generación de cobros en las pruebas de ingreso.
         self.parche_generar_cobro = patch.object(
@@ -138,7 +149,9 @@ class TestCasoUsoIngreso:
     def teardown_method(self):
         self.parche_generar_cobro.stop()
 
-    def test_ingreso_exitoso_carro(self):
+    @pytest.mark.parametrize("tipo", ["ENTRADA", "MIXTO"])
+    def test_ingreso_exitoso_carro(self, tipo):
+        self.sesion.carril.tipo = tipo
         resultado = self.caso_ingreso.ejecutar(
             sede_id=self.sede_id,
             carril_id=self.carril_id,
@@ -220,3 +233,27 @@ class TestCasoUsoIngreso:
         assert resultado.autorizado is False
         assert resultado.decision_barrera == DecisionBarrera.MANTENER_CERRADA
         assert len(self.sesion.estancias) == 0
+
+    @pytest.mark.parametrize(
+        "tipo,activo,otra_sede,existe",
+        [
+            ("SALIDA", True, False, True),
+            ("ENTRADA", False, False, True),
+            ("MIXTO", True, True, True),
+            ("MIXTO", True, False, False),
+        ],
+    )
+    def test_rechaza_carril_incompatible(self, tipo, activo, otra_sede, existe):
+        self.sesion.carril.tipo = tipo
+        self.sesion.carril.activo = activo
+        if otra_sede:
+            self.sesion.carril.sede_id = uuid4()
+        if not existe:
+            self.sesion.carril = None
+        with patch.object(GenerarCobro, "ejecutar") as generar_cobro:
+            resultado = self.caso_ingreso.ejecutar(self.sede_id, self.carril_id, "ABC123")
+        assert not resultado.autorizado
+        assert resultado.decision_barrera == DecisionBarrera.MANTENER_CERRADA
+        assert "carril" in resultado.mensaje.lower()
+        assert not self.sesion.estancias
+        generar_cobro.assert_not_called()

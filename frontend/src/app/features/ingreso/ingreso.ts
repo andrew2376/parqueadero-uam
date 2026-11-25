@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Observable, catchError, finalize, map, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import {
-  CarrilCamara, CarrilMixtoDisponible, DireccionCamara, EscenarioSimulacion, IngresoService, LecturaSimulada,
+  CarrilCamara, CarrilActivoDisponible, DireccionCamara, EscenarioSimulacion, IngresoService, LecturaSimulada,
   ResultadoIngreso, ResultadoSalida
 } from '../../core/services/ingreso.service';
 import { TipoVehiculo } from '../../core/models/vehiculo.model';
@@ -36,12 +36,12 @@ export class ControlIngresoComponent implements OnInit {
     baja: 'Confianza baja',
     'sin-lectura': 'Sin lectura'
   };
-  carriles: CarrilMixtoDisponible[] = [];
+  carriles: CarrilActivoDisponible[] = [];
   nombreSede: string | null = null;
   ultimaSimulacion: { escenario: EscenarioSimulacion; placa: string } | null = null;
   direccion: DireccionCamara = 'ENTRADA';
   carril: CarrilCamara | null = null;
-  estadoCarril = 'Buscando carriles MIXTO activos...';
+  estadoCarril = 'Buscando carriles activos...';
   confirmandoAcceso = false;
   lectura: LecturaSimulada | null = null;
   resultadoIngreso: ResultadoSalida | null = null;
@@ -60,18 +60,18 @@ export class ControlIngresoComponent implements OnInit {
 
   cargarCarriles(): void {
     if (this.procesando) return;
-    this.estadoCarril = 'Buscando carriles MIXTO activos...';
+    this.estadoCarril = 'Buscando carriles activos...';
     this.ejecutar(
-      this.ingresoService.listarCarrilesMixtos(this.route.snapshot.queryParamMap.get('sede')),
+      this.ingresoService.listarCarrilesActivos(this.route.snapshot.queryParamMap.get('sede')),
       carriles => {
         this.carriles = carriles;
         if (carriles.length === 1) {
           const carril = carriles[0];
-          this.activarCarril({ ...carril, tipo: 'MIXTO', activo: true }, carril.nombre_sede);
+          this.activarCarril({ ...carril, activo: true }, carril.nombre_sede);
         } else {
           this.estadoCarril = carriles.length
             ? 'Selecciona un carril por nombre.'
-            : 'No hay carriles MIXTO activos disponibles.';
+            : 'No hay carriles activos disponibles.';
         }
       },
       () => { this.estadoCarril = 'No se pudieron consultar los carriles.'; }
@@ -94,14 +94,14 @@ export class ControlIngresoComponent implements OnInit {
       return;
     }
     this.ejecutar(this.ingresoService.consultarCarril(id), carril => {
-      if (!carril.activo || carril.tipo !== 'MIXTO') {
-        this.estadoCarril = 'El carril debe estar activo y ser de tipo MIXTO.';
+      if (!carril.activo) {
+        this.estadoCarril = 'El carril debe estar activo.';
         return;
       }
       const opcion = this.carriles.find(item => item.id === carril.id);
       this.activarCarril(carril, opcion?.nombre_sede ?? null);
       if (!opcion) {
-        this.ingresoService.listarCarrilesMixtos(carril.sede_id).pipe(
+        this.ingresoService.listarCarrilesActivos(carril.sede_id).pipe(
           map(carriles => carriles.find(item => item.id === carril.id)?.nombre_sede ?? null),
           catchError(() => of(null)),
           takeUntilDestroyed(this.destroyRef)
@@ -121,12 +121,19 @@ export class ControlIngresoComponent implements OnInit {
   private activarCarril(carril: CarrilCamara, nombreSede: string | null): void {
     this.carril = carril;
     this.nombreSede = nombreSede;
-    this.estadoCarril = 'Carril MIXTO activo y verificado';
+    if (!this.camaraDisponible(this.direccion)) {
+      this.direccion = carril.tipo === 'SALIDA' ? 'SALIDA' : 'ENTRADA';
+    }
+    this.estadoCarril = `Carril ${carril.tipo} activo y verificado`;
     this.actualizarCupos(carril);
   }
 
+  camaraDisponible(direccion: DireccionCamara): boolean {
+    return this.carril?.activo === true && (this.carril.tipo === 'MIXTO' || this.carril.tipo === direccion);
+  }
+
   seleccionarCamara(direccion: DireccionCamara): void {
-    if (this.procesando || this.direccion === direccion) return;
+    if (this.procesando || this.direccion === direccion || !this.camaraDisponible(direccion)) return;
     this.direccion = direccion;
     this.limpiarCaptura();
   }
@@ -149,7 +156,7 @@ export class ControlIngresoComponent implements OnInit {
   }
 
   onSimularLectura(): void {
-    if (this.procesando || !this.carril) return;
+    if (this.procesando || !this.carril || !this.camaraDisponible(this.direccion)) return;
     this.limpiarCaptura();
     const escenario = this.escenario.value;
     const placa = this.placaDeProximaSimulacion;
@@ -179,7 +186,7 @@ export class ControlIngresoComponent implements OnInit {
 
   onRegistrarIngreso(): void {
     const carril = this.carril;
-    if (this.procesando || !carril || this.ingresoForm.invalid) return;
+    if (this.procesando || !carril || !this.camaraDisponible(this.direccion) || this.ingresoForm.invalid) return;
 
     this.resultadoIngreso = null;
     this.mensaje = '';
@@ -201,9 +208,22 @@ export class ControlIngresoComponent implements OnInit {
         }))
       : of(placa);
 
+    const direccion = this.direccion;
+    // El contrato de salida solo recibe sede y placa. Revalida el carril antes de llamar.
+    const carrilVerificado$ = direccion === 'SALIDA'
+      ? this.ingresoService.consultarCarril(carril.id).pipe(map(actual => {
+          if (actual.id !== carril.id || actual.sede_id !== carril.sede_id || !actual.activo
+            || (actual.tipo !== 'SALIDA' && actual.tipo !== 'MIXTO')) {
+            throw new Error('El carril ya no está habilitado para salida en esta sede.');
+          }
+          return actual;
+        }))
+      : of(carril);
+
     this.confirmandoAcceso = true;
-    this.ejecutar<ResultadoIngreso | ResultadoSalida>(confirmada$.pipe(
-      switchMap(placaValidada => this.direccion === 'ENTRADA'
+    this.ejecutar<ResultadoIngreso | ResultadoSalida>(carrilVerificado$.pipe(
+      switchMap(() => confirmada$),
+      switchMap(placaValidada => direccion === 'ENTRADA'
         ? this.ingresoService.registrarIngreso({
             sedeId: carril.sede_id, carrilId: carril.id, placa: placaValidada
           })

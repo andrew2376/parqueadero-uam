@@ -13,12 +13,7 @@ export interface CarrilCamara {
   activo: boolean;
 }
 
-export interface CarrilMixtoDisponible {
-  id: string;
-  sede_id: string;
-  nombre: string;
-  nombre_sede: string;
-}
+export type CarrilActivoDisponible = Omit<CarrilCamara, 'activo'> & { nombre_sede: string };
 
 export interface SolicitudIngreso {
   sedeId: string;
@@ -72,8 +67,8 @@ export class IngresoService {
     return this.http.get<CarrilCamara>(`${API_BASE_URL}/carriles/${encodeURIComponent(id)}`);
   }
 
-  listarCarrilesMixtos(sedeId: string | null): Observable<CarrilMixtoDisponible[]> {
-    return this.http.get<CarrilMixtoDisponible[]>(`${API_BASE_URL}/lecturas-lpr/carriles-mixtos`, {
+  listarCarrilesActivos(sedeId: string | null): Observable<CarrilActivoDisponible[]> {
+    return this.http.get<CarrilActivoDisponible[]>(`${API_BASE_URL}/lecturas-lpr/carriles-activos`, {
       params: sedeId ? { sede_id: sedeId } : {}
     });
   }
