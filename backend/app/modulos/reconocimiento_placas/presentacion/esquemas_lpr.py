@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
@@ -81,3 +82,14 @@ class EventoLecturaRespuesta(BaseModel):
     origen: OrigenEventoLectura
     estado: EstadoEventoLectura
     fecha_hora: datetime
+
+
+class DireccionCamara(StrEnum):
+    ENTRADA = "ENTRADA"
+    SALIDA = "SALIDA"
+
+
+class SimulacionLPRRespuesta(EventoLecturaRespuesta):
+    direccion: DireccionCamara
+    tipo_vehiculo: TipoVehiculo | None
+    requiere_confirmacion_manual: bool

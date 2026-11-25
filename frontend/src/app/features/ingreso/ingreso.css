@@ -360,3 +360,83 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Controles de las dos cámaras del carril mixto */
+.lane-card {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+}
+
+.lane-field, .camera-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+}
+
+.lane-field input {
+  flex: 1 1 19rem;
+  min-width: 0;
+}
+
+.lane-field input, .camera-controls select {
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  background: #fff;
+  color: #0b2545;
+  font: inherit;
+  padding: .65rem .75rem;
+}
+
+.lane-field button, .camera-switch button {
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  color: #0b2545;
+  background: #f8fafc;
+  font: inherit;
+  font-weight: 600;
+  padding: .65rem .9rem;
+  cursor: pointer;
+}
+
+.camera-switch button {
+  flex: 1 1 6rem;
+}
+
+.camera-switch button[aria-pressed='true'] {
+  border-color: #0b2545;
+  background: #0b2545;
+  color: #fff;
+}
+
+.camera-controls {
+  display: grid;
+  gap: .85rem;
+  margin-bottom: 1rem;
+}
+
+.camera-controls .btn-simulate {
+  margin: 0;
+}
+
+.camera-controls button:disabled, .lane-field button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.lane-card p {
+  margin: .65rem 0 0;
+  color: #475569;
+}
+
+.lane-card .lane-ready {
+  color: #166534;
+}
+
+.camera-message {
+  padding: .75rem;
+  margin: 0;
+  border-radius: .5rem;
+  background: #fff7ed;
+  color: #9a3412;
+}
