@@ -1,8 +1,10 @@
+
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -26,6 +28,14 @@ class CobroModelo(Base):
             "dia_operativo",
             name="uq_cobro_placa_sede_dia",
         ),
+        CheckConstraint(
+            """
+            (tarifa_id IS NULL AND version_tarifa IS NULL)
+            OR
+            (tarifa_id IS NOT NULL AND version_tarifa IS NOT NULL)
+            """,
+            name="ck_cobros_snapshot_tarifa_completo",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -38,14 +48,14 @@ class CobroModelo(Base):
         nullable=False,
     )
 
-    tarifa_id: Mapped[uuid.UUID] = mapped_column(
+    tarifa_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tarifas.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
     )
 
-    version_tarifa: Mapped[int] = mapped_column(
+    version_tarifa: Mapped[int | None] = mapped_column(
         Integer,
-        nullable=False,
+        nullable=True,
     )
 
     placa: Mapped[str] = mapped_column(
