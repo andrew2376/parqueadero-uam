@@ -1,7 +1,8 @@
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.modulos.eventos_lectura.dominio.evento_lectura import (
     EstadoEventoLectura,
@@ -11,12 +12,19 @@ from app.modulos.reconocimiento_placas.dominio.lectura_lpr import (
     EstadoLectura,
     OrigenLectura,
 )
-from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo
+from app.modulos.vehiculos.dominio.vehiculo import TipoVehiculo, normalizar_placa
+
+
+def normalizar_placa_textual(valor: object) -> object:
+    return normalizar_placa(valor) if isinstance(valor, str) else valor
+
+
+PlacaNormalizada = Annotated[str, BeforeValidator(normalizar_placa_textual)]
 
 
 class ValidarLecturaManualSolicitud(BaseModel):
     carril_id: UUID
-    placa_confirmada: str = Field(
+    placa_confirmada: PlacaNormalizada = Field(
         ...,
         min_length=5,
         max_length=6,
@@ -56,7 +64,7 @@ class LecturaLPREsquema(BaseModel):
 
 class LecturaManualSolicitud(BaseModel):
     carril_id: UUID
-    placa: str = Field(
+    placa: PlacaNormalizada = Field(
         ...,
         min_length=5,
         max_length=6,

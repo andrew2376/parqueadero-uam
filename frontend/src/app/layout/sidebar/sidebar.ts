@@ -26,8 +26,7 @@ export class SidebarComponent {
     { label: 'Caja y pagos', route: '/caja', icon: 'payments' },
     { label: 'Administración de carriles', route: '/carriles', icon: 'alt_route', rolMinimo: 'ADMINISTRADOR' },
     { label: 'Gestión de tarifas', route: '/tarifas', icon: 'tune', rolMinimo: 'ADMINISTRADOR' },
-  { label: 'Administración de cupos', route: '/cupos', icon: 'garage', rolMinimo: 'ADMINISTRADOR' },
-    { label: 'Historial', route: '/historial', icon: 'history' },
+    { label: 'Administración de cupos', route: '/cupos', icon: 'garage', rolMinimo: 'ADMINISTRADOR' },
   ];
 
   constructor(private authService: AuthService) {}

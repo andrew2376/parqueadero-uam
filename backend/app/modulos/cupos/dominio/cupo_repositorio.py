@@ -20,3 +20,12 @@ class CupoRepositorio(ABC):
         tipo_vehiculo: str,
     ) -> Cupo:
         pass
+
+    @abstractmethod
+    def actualizar_capacidades(
+        self,
+        sede_id: UUID,
+        cupos_carro: int,
+        cupos_moto: int,
+    ) -> tuple[int, int]:
+        pass

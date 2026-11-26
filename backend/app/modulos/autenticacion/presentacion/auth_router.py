@@ -5,10 +5,11 @@ from app.modulos.autenticacion.aplicacion.servicio_autenticacion import (
 )
 from app.modulos.autenticacion.dominio.usuario import Usuario
 from app.modulos.autenticacion.dominio.usuario_repositorio import UsuarioRepositorio
-from app.modulos.autenticacion.infraestructura.usuario_repositorio_memoria import (
-    obtener_repositorio_usuario,
-)
+from app.modulos.autenticacion.infraestructura.password_hasher_argon2 import PasswordHasherArgon2
+from app.modulos.autenticacion.infraestructura.tokens_jwt import TokensJWT
 from app.modulos.autenticacion.presentacion.dependencias_auth import (
+    obtener_repositorio_usuario,
+    obtener_tokens_jwt,
     obtener_usuario_actual,
 )
 from app.modulos.autenticacion.presentacion.esquemas_auth import (
@@ -21,6 +22,7 @@ router = APIRouter(
     prefix="/auth",
     tags=["Autenticación y Sesión"],
 )
+_password_hasher = PasswordHasherArgon2()
 
 
 @router.post(
@@ -32,8 +34,11 @@ router = APIRouter(
 def login(
     datos: LoginEsquema,
     repositorio: UsuarioRepositorio = Depends(obtener_repositorio_usuario),
+    tokens: TokensJWT = Depends(obtener_tokens_jwt),
 ) -> RespuestaLoginEsquema:
-    caso_uso = AutenticarUsuario(repositorio=repositorio)
+    caso_uso = AutenticarUsuario(
+        repositorio=repositorio, password_hasher=_password_hasher, emitir_token=tokens.emitir
+    )
     try:
         token, usuario = caso_uso.ejecutar(
             username=datos.username,
