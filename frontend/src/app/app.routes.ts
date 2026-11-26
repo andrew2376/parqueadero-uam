@@ -49,5 +49,15 @@ export const routes: Routes = [
     data: { rol: 'ADMINISTRADOR' }
   },
 
+
+
+{
+  path: 'caja',
+  loadComponent: () =>
+    import('./features/caja/caja')
+      .then(m => m.CajaComponent),
+  canActivate: [authGuard]
+},
+
   { path: '**', redirectTo: 'panel' }
 ];
