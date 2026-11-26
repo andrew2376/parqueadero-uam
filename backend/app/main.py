@@ -28,6 +28,9 @@ from app.modulos.eventos_lectura.presentacion.evento_lectura_router import (
 from app.modulos.pagos.presentacion.pago_router import (
     router as router_pagos,
 )
+from app.modulos.panel.presentacion.panel_router import (
+    router as router_panel,
+)
 from app.modulos.reconocimiento_placas.presentacion.lpr_router import (
     router as router_lpr,
 )
@@ -124,6 +127,12 @@ aplicacion.include_router(
 # Auditoría
 aplicacion.include_router(
     router_auditoria,
+    prefix=configuracion.prefijo_api,
+)
+
+# Panel operador / Métricas
+aplicacion.include_router(
+    router_panel,
     prefix=configuracion.prefijo_api,
 )
 
