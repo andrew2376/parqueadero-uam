@@ -11,9 +11,6 @@ import { Subscription, interval } from 'rxjs';
     <div class="panel-header">
       <div class="header-titles">
         <h1 class="sede-title">{{ metricas?.sede_nombre || 'Sede Principal UAM' }}</h1>
-        <span class="live-indicator">
-          <span class="pulsing-dot"></span> Actualizado en tiempo real (Base de Datos)
-        </span>
       </div>
       <button class="btn-refresh" (click)="cargarMetricas()">🔄 Refrescar</button>
     </div>
