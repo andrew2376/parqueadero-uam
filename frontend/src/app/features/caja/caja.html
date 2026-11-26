@@ -1,0 +1,258 @@
+<div class="caja-page">
+
+  <header class="page-header">
+    <div>
+      <h1 class="header-title">Caja y pagos</h1>
+      <p class="header-subtitle">
+        Consulta los cobros pendientes y registra pagos en efectivo.
+      </p>
+    </div>
+    <div class="header-icon">💵</div>
+  </header>
+
+  <div class="caja-grid">
+
+    <section class="card consulta-card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Consultar vehículo</h2>
+          <p class="card-subtitle">Ingresa la placa para consultar su cobro.</p>
+        </div>
+        <span class="section-icon">🚘</span>
+      </div>
+
+      <form (ngSubmit)="consultarCobro()" class="consulta-form">
+        <div class="form-group">
+          <label for="placa">Placa del vehículo</label>
+          <input
+            id="placa"
+            name="placa"
+            type="text"
+            [(ngModel)]="placa"
+            placeholder="Ejemplo: ABC123"
+            maxlength="6"
+            autocomplete="off"
+            [disabled]="consultando || procesandoPago"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="consultando || procesandoPago"
+        >
+          {{ consultando ? 'Consultando...' : '🔍 Consultar cobro' }}
+        </button>
+      </form>
+
+      <p class="help-text">
+        Se consulta el cobro generado durante el ingreso del vehículo.
+      </p>
+    </section>
+
+    <section class="card detalle-card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Detalle del cobro</h2>
+          <p class="card-subtitle">Información obtenida del sistema.</p>
+        </div>
+        <span class="section-icon">📄</span>
+      </div>
+
+      @if (cobro) {
+        <div class="detalle-contenido">
+
+          <div class="placa-destacada">
+            <span class="placa-label">PLACA DEL VEHÍCULO</span>
+            <strong>{{ cobro.placa }}</strong>
+          </div>
+
+          <div class="dato-row">
+            <span>Sede</span>
+            <strong>{{ cobro.sede_nombre }}</strong>
+          </div>
+
+          <div class="dato-row">
+            <span>Día operativo</span>
+            <strong>{{ cobro.dia_operativo }}</strong>
+          </div>
+
+          <div class="dato-row">
+            <span>Tarifa aplicada</span>
+            <strong>{{ cobro.tarifa_aplicada }}</strong>
+          </div>
+
+          <div class="dato-row">
+            <span>Vehículo</span>
+            <strong>
+              {{ cobro.vehiculo_dentro ? 'Dentro del parqueadero' : 'Fuera del parqueadero' }}
+            </strong>
+          </div>
+
+          <div class="dato-row">
+            <span>Estado</span>
+            @if (cobro.pagado) {
+              <span class="status-badge paid">Pagado</span>
+            } @else {
+              <span class="status-badge pending">Pendiente</span>
+            }
+          </div>
+
+          <div class="total-box">
+            <span>Total a pagar</span>
+            <strong>{{ formatearMoneda(cobro.valor_tarifa) }}</strong>
+          </div>
+
+          @if (cobro.pagado) {
+            <div class="paid-notice">
+              <strong>✓ Este cobro ya fue pagado.</strong>
+              @if (cobro.fecha_hora_pago) {
+                <span>Fecha de pago: {{ formatearFecha(cobro.fecha_hora_pago) }}</span>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <span class="empty-icon">🧾</span>
+          <strong>Sin cobro consultado</strong>
+          <p>Busca un vehículo para visualizar su información.</p>
+        </div>
+      }
+    </section>
+
+    <section class="card pago-card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Recibir efectivo</h2>
+          <p class="card-subtitle">Registra el dinero recibido y confirma el pago.</p>
+        </div>
+        <span class="section-icon">💰</span>
+      </div>
+
+      @if (cobro && !cobro.pagado) {
+        <div class="pago-contenido">
+
+          <div class="total-pago">
+            <span>Total del cobro</span>
+            <strong>{{ formatearMoneda(cobro.valor_tarifa) }}</strong>
+          </div>
+
+          <div class="form-group">
+            <label for="efectivo">Efectivo recibido (COP)</label>
+            <input
+              id="efectivo"
+              name="efectivo"
+              type="number"
+              min="0"
+              step="100"
+              [(ngModel)]="efectivoRecibido"
+              placeholder="Ejemplo: 20000"
+              [disabled]="procesandoPago"
+            />
+          </div>
+
+          @if (efectivoRecibido !== null && efectivoRecibido > 0) {
+            <div class="cambio-box" [class.insuficiente]="efectivoInsuficiente">
+              <span>
+                {{ efectivoInsuficiente ? 'Dinero insuficiente' : 'Cambio a devolver' }}
+              </span>
+
+              <strong>
+                {{ efectivoInsuficiente
+                  ? formatearMoneda(0)
+                  : formatearMoneda(cambio) }}
+              </strong>
+
+              @if (efectivoInsuficiente) {
+                <small>El efectivo recibido no cubre el total.</small>
+              }
+            </div>
+          }
+
+          <button
+            type="button"
+            class="btn-primary btn-pay"
+            [disabled]="!puedeConfirmarPago"
+            (click)="confirmarPago()"
+          >
+            {{ procesandoPago ? 'Registrando pago...' : 'Confirmar pago' }}
+          </button>
+
+          <p class="help-text text-center">
+            Se registrará el valor exacto del cobro.
+          </p>
+        </div>
+      } @else if (cobro?.pagado) {
+        <div class="empty-state success-state">
+          <span class="empty-icon">✅</span>
+          <strong>Pago completado</strong>
+          <p>Este cobro no requiere otro pago.</p>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <span class="empty-icon">💳</span>
+          <strong>Esperando consulta</strong>
+          <p>Primero consulta un vehículo para recibir su pago.</p>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (mensajeError) {
+    <div class="message-box error-message" role="alert">
+      <strong>⚠️ Atención</strong>
+      <span>{{ mensajeError }}</span>
+    </div>
+  }
+
+  @if (mensajeExito) {
+    <div class="message-box success-message" role="status">
+      <strong>✓ {{ mensajeExito }}</strong>
+    </div>
+  }
+
+  @if (pagoRegistrado) {
+    <section class="card receipt-card">
+      <div class="receipt-header">
+        <span class="receipt-icon">✓</span>
+        <div>
+          <h2>Comprobante de pago</h2>
+          <p>Pago registrado correctamente en el sistema.</p>
+        </div>
+      </div>
+
+      <div class="receipt-details">
+        <div class="dato-row">
+          <span>Identificador del pago</span>
+          <strong>{{ pagoRegistrado.id }}</strong>
+        </div>
+
+        <div class="dato-row">
+          <span>Placa</span>
+          <strong>{{ cobro?.placa }}</strong>
+        </div>
+
+        <div class="dato-row">
+          <span>Medio de pago</span>
+          <strong>{{ pagoRegistrado.medio_pago }}</strong>
+        </div>
+
+        <div class="dato-row">
+          <span>Valor registrado</span>
+          <strong>{{ formatearMoneda(pagoRegistrado.valor) }}</strong>
+        </div>
+
+        <div class="dato-row">
+          <span>Fecha y hora</span>
+          <strong>{{ formatearFecha(pagoRegistrado.fecha_hora_pago) }}</strong>
+        </div>
+      </div>
+
+      <button type="button" class="btn-secondary" (click)="nuevaConsulta()">
+        Nueva consulta
+      </button>
+    </section>
+  }
+
+</div>
