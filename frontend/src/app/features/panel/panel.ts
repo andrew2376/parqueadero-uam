@@ -12,7 +12,6 @@ import { Subscription, interval } from 'rxjs';
       <div class="header-titles">
         <h1 class="sede-title">{{ metricas?.sede_nombre || 'Sede Principal UAM' }}</h1>
       </div>
-      <button class="btn-refresh" (click)="cargarMetricas()">🔄 Refrescar</button>
     </div>
 
     <div class="kpi-grid">

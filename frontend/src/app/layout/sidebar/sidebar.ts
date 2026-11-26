@@ -27,7 +27,6 @@ export class SidebarComponent {
     { label: 'Administración de carriles', route: '/carriles', icon: 'alt_route', rolMinimo: 'ADMINISTRADOR' },
     { label: 'Gestión de tarifas', route: '/tarifas', icon: 'tune', rolMinimo: 'ADMINISTRADOR' },
     { label: 'Cupos y sedes', route: '/cupos', icon: 'garage', rolMinimo: 'ADMINISTRADOR' },
-    { label: 'Historial', route: '/historial', icon: 'history' },
   ];
 
   constructor(private authService: AuthService) {}
