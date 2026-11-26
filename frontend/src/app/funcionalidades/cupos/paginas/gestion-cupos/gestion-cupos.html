@@ -1,0 +1,251 @@
+
+<div class="pagina-cupos">
+
+  <header class="encabezado">
+    <div>
+      <h1>Administración de cupos</h1>
+      <p>Configura la capacidad y consulta la ocupación del parqueadero.</p>
+    </div>
+
+    <button
+      class="btn-secundario"
+      (click)="consultarCupos()"
+      [disabled]="cargando">
+      Actualizar información
+    </button>
+  </header>
+
+  @if (error) {
+    <div class="mensaje-error">
+      {{ error }}
+    </div>
+  }
+
+  @if (mensaje) {
+    <div class="mensaje-exito">
+      {{ mensaje }}
+    </div>
+  }
+
+  @if (cargando) {
+    <div class="estado-carga">
+      Cargando información de cupos...
+    </div>
+  } @else {
+
+    <section class="resumen">
+
+      <article class="tarjeta-resumen">
+        <span>Capacidad total</span>
+        <strong>{{ totalCapacidad }}</strong>
+      </article>
+
+      <article class="tarjeta-resumen">
+        <span>Vehículos ocupando cupo</span>
+        <strong>{{ totalOcupados }}</strong>
+      </article>
+
+      <article class="tarjeta-resumen">
+        <span>Cupos disponibles</span>
+        <strong>{{ totalDisponibles }}</strong>
+      </article>
+
+    </section>
+
+    <section class="contenedor-cupos">
+
+      <!-- Cupos para carros -->
+      <article class="tarjeta-cupo">
+        <div class="titulo-cupo">
+          <div>
+            <h2>Carros</h2>
+            <p>Ocupación de espacios para automóviles.</p>
+          </div>
+
+          <span class="icono-cupo">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="38"
+              height="38"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true">
+
+              <path d="M5 17h14l1-5-2-5H6l-2 5 1 5Z"/>
+              <path d="M4 12h16"/>
+              <path d="M7 17v2"/>
+              <path d="M17 17v2"/>
+              <path d="M7 7l1.5-3h7L17 7"/>
+              <circle cx="7.5" cy="14" r="1"/>
+              <circle cx="16.5" cy="14" r="1"/>
+
+            </svg>
+          </span>
+        </div>
+
+        <div class="datos-cupo">
+          <div>
+            <span>Ocupados</span>
+            <strong>{{ cuposCarro?.ocupados ?? 0 }}</strong>
+          </div>
+
+          <div>
+            <span>Disponibles</span>
+            <strong>{{ cuposCarro?.disponibles ?? 0 }}</strong>
+          </div>
+
+          <div>
+            <span>Capacidad</span>
+            <strong>{{ cuposCarro?.capacidad ?? 0 }}</strong>
+          </div>
+        </div>
+
+        <div class="barra-progreso">
+          <div
+            class="progreso"
+            [style.width.%]="porcentajeOcupacion(cuposCarro)">
+          </div>
+        </div>
+
+        <span class="porcentaje">
+          {{ porcentajeOcupacion(cuposCarro) }}% de ocupación
+        </span>
+      </article>
+
+      <!-- Cupos para motocicletas -->
+      <article class="tarjeta-cupo">
+        <div class="titulo-cupo">
+          <div>
+            <h2>Motocicletas</h2>
+            <p>Ocupación de espacios para motos.</p>
+          </div>
+
+          <span class="icono-cupo">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="38"
+              height="38"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true">
+
+              <circle cx="5.5" cy="17.5" r="3.5"/>
+              <circle cx="18.5" cy="17.5" r="3.5"/>
+              <path d="M15 6h2l2 4"/>
+              <path d="m5.5 17.5 4-7h4l5 7"/>
+              <path d="M9.5 10.5 7 7H5"/>
+              <path d="M13.5 10.5 11 7"/>
+              <path d="M10 7h4"/>
+              <path d="M14 7l1-2h2"/>
+
+            </svg>
+          </span>
+        </div>
+
+        <div class="datos-cupo">
+          <div>
+            <span>Ocupados</span>
+            <strong>{{ cuposMoto?.ocupados ?? 0 }}</strong>
+          </div>
+
+          <div>
+            <span>Disponibles</span>
+            <strong>{{ cuposMoto?.disponibles ?? 0 }}</strong>
+          </div>
+
+          <div>
+            <span>Capacidad</span>
+            <strong>{{ cuposMoto?.capacidad ?? 0 }}</strong>
+          </div>
+        </div>
+
+        <div class="barra-progreso">
+          <div
+            class="progreso"
+            [style.width.%]="porcentajeOcupacion(cuposMoto)">
+          </div>
+        </div>
+
+        <span class="porcentaje">
+          {{ porcentajeOcupacion(cuposMoto) }}% de ocupación
+        </span>
+      </article>
+
+    </section>
+
+    <section class="contenedor-configuracion">
+
+      <div class="titulo-configuracion">
+        <h2>Configurar capacidad</h2>
+        <p>Define el número máximo de espacios disponibles por vehículo.</p>
+      </div>
+
+      <form (ngSubmit)="guardarCambios()">
+
+        <div class="campos-configuracion">
+
+          <div class="campo">
+            <label for="cuposCarro">Capacidad para carros</label>
+            <input
+              id="cuposCarro"
+              type="number"
+              name="cuposCarro"
+              min="0"
+              step="1"
+              [(ngModel)]="formulario.cupos_carro"
+              required>
+
+            <small>
+              Actualmente ocupados: {{ cuposCarro?.ocupados ?? 0 }}
+            </small>
+          </div>
+
+          <div class="campo">
+            <label for="cuposMoto">Capacidad para motos</label>
+            <input
+              id="cuposMoto"
+              type="number"
+              name="cuposMoto"
+              min="0"
+              step="1"
+              [(ngModel)]="formulario.cupos_moto"
+              required>
+
+            <small>
+              Actualmente ocupados: {{ cuposMoto?.ocupados ?? 0 }}
+            </small>
+          </div>
+
+        </div>
+
+        <div class="acciones-formulario">
+          <button
+            type="button"
+            class="btn-secundario"
+            (click)="consultarCupos()"
+            [disabled]="guardando">
+            Cancelar cambios
+          </button>
+
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="guardando">
+            {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+
+      </form>
+
+    </section>
+  }
+
+</div>

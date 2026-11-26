@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
@@ -29,27 +28,21 @@ class TarifaRepositorioMemoria:
 
         # Cerrar la versión anterior cuando comienza una nueva.
         for anterior in versiones:
-            if (
-                anterior.vigencia_hasta is None
-                and anterior.vigencia_desde < tarifa.vigencia_desde
-            ):
+            if anterior.vigencia_hasta is None and anterior.vigencia_desde < tarifa.vigencia_desde:
                 anterior.vigencia_hasta = tarifa.vigencia_desde
                 anterior.activa = False
 
         # Comprobar que no existan vigencias superpuestas.
         for anterior in versiones:
             hay_superposicion = (
-                tarifa.vigencia_hasta is None
-                or anterior.vigencia_desde < tarifa.vigencia_hasta
+                tarifa.vigencia_hasta is None or anterior.vigencia_desde < tarifa.vigencia_hasta
             ) and (
-                anterior.vigencia_hasta is None
-                or anterior.vigencia_hasta > tarifa.vigencia_desde
+                anterior.vigencia_hasta is None or anterior.vigencia_hasta > tarifa.vigencia_desde
             )
 
             if hay_superposicion:
                 raise ValueError(
-                    "La vigencia de la nueva tarifa se superpone "
-                    "con una versión existente."
+                    "La vigencia de la nueva tarifa se superpone con una versión existente."
                 )
 
         versiones.append(tarifa)
@@ -65,11 +58,7 @@ class TarifaRepositorioMemoria:
             [],
         )
 
-        activas = [
-            tarifa
-            for tarifa in versiones
-            if tarifa.activa
-        ]
+        activas = [tarifa for tarifa in versiones if tarifa.activa]
 
         return max(
             activas,
@@ -99,10 +88,7 @@ class TarifaRepositorioMemoria:
             tarifa
             for tarifa in versiones
             if tarifa.vigencia_desde <= fecha
-            and (
-                tarifa.vigencia_hasta is None
-                or tarifa.vigencia_hasta > fecha
-            )
+            and (tarifa.vigencia_hasta is None or tarifa.vigencia_hasta > fecha)
         ]
 
         return max(
@@ -177,7 +163,11 @@ def test_calcular_tarifa_diurna():
         tarifa_diurna=Decimal("3000"),
         tarifa_nocturna=Decimal("2000"),
         vigencia_desde=datetime(
-            2026, 11, 1, 0, 0,
+            2026,
+            11,
+            1,
+            0,
+            0,
             tzinfo=zona,
         ),
     )
@@ -214,7 +204,11 @@ def test_calcular_tarifa_nocturna():
         tarifa_diurna=Decimal("3000"),
         tarifa_nocturna=Decimal("2000"),
         vigencia_desde=datetime(
-            2026, 11, 1, 0, 0,
+            2026,
+            11,
+            1,
+            0,
+            0,
             tzinfo=zona,
         ),
     )
@@ -272,7 +266,11 @@ def test_configurar_nueva_version_cierra_anterior():
         tarifa_diurna=Decimal("3000"),
         tarifa_nocturna=Decimal("2000"),
         vigencia_desde=datetime(
-            2026, 11, 1, 0, 0,
+            2026,
+            11,
+            1,
+            0,
+            0,
             tzinfo=zona,
         ),
     )
@@ -283,7 +281,11 @@ def test_configurar_nueva_version_cierra_anterior():
         tarifa_diurna=Decimal("4000"),
         tarifa_nocturna=Decimal("2500"),
         vigencia_desde=datetime(
-            2026, 11, 15, 0, 0,
+            2026,
+            11,
+            15,
+            0,
+            0,
             tzinfo=zona,
         ),
     )
@@ -304,12 +306,20 @@ def test_calcular_tarifa_historica_inactiva():
     zona = ZoneInfo("America/Bogota")
 
     fecha_inicio = datetime(
-        2026, 11, 1, 0, 0,
+        2026,
+        11,
+        1,
+        0,
+        0,
         tzinfo=zona,
     )
 
     fecha_fin = datetime(
-        2026, 11, 15, 0, 0,
+        2026,
+        11,
+        15,
+        0,
+        0,
         tzinfo=zona,
     )
 
@@ -331,7 +341,11 @@ def test_calcular_tarifa_historica_inactiva():
         sede_id=sede_id,
         tipo_vehiculo="CARRO",
         fecha_hora=datetime(
-            2026, 11, 10, 10, 0,
+            2026,
+            11,
+            10,
+            10,
+            0,
             tzinfo=zona,
         ),
         zona_horaria="America/Bogota",
@@ -356,11 +370,19 @@ def test_rechazar_calculo_fuera_de_vigencia():
         activa=False,
         version=1,
         vigencia_desde=datetime(
-            2026, 11, 1, 0, 0,
+            2026,
+            11,
+            1,
+            0,
+            0,
             tzinfo=zona,
         ),
         vigencia_hasta=datetime(
-            2026, 11, 15, 0, 0,
+            2026,
+            11,
+            15,
+            0,
+            0,
             tzinfo=zona,
         ),
     )
@@ -372,7 +394,11 @@ def test_rechazar_calculo_fuera_de_vigencia():
             sede_id=sede_id,
             tipo_vehiculo="CARRO",
             fecha_hora=datetime(
-                2026, 11, 20, 10, 0,
+                2026,
+                11,
+                20,
+                10,
+                0,
                 tzinfo=zona,
             ),
             zona_horaria="America/Bogota",
@@ -390,7 +416,11 @@ def test_rechazar_configuracion_con_vigencia_superpuesta():
         tarifa_diurna=Decimal("3000"),
         tarifa_nocturna=Decimal("2000"),
         vigencia_desde=datetime(
-            2026, 11, 1, 0, 0,
+            2026,
+            11,
+            1,
+            0,
+            0,
             tzinfo=zona,
         ),
     )
@@ -404,7 +434,11 @@ def test_rechazar_configuracion_con_vigencia_superpuesta():
             tarifa_diurna=Decimal("4000"),
             tarifa_nocturna=Decimal("2500"),
             vigencia_desde=datetime(
-                2026, 10, 15, 0, 0,
+                2026,
+                10,
+                15,
+                0,
+                0,
                 tzinfo=zona,
             ),
         )

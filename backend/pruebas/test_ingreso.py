@@ -1,4 +1,3 @@
-
 from datetime import time
 from unittest.mock import patch
 from uuid import uuid4

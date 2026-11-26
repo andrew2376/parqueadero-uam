@@ -1,108 +1,87 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, catchError, defer, map, of, share } from 'rxjs';
+import { AUTH_LOGIN_URL, AUTH_PERFIL_URL } from '../api.config';
 import { CredencialesLogin, RespuestaLogin, UsuarioSesion } from '../models/sesion.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8001/api/v1/auth';
   private readonly storageKey = 'parqueadero_uam_sesion';
+  private readonly usuarioActualSubject = new BehaviorSubject<UsuarioSesion | null>(null);
+  readonly usuarioActual$ = this.usuarioActualSubject.asObservable();
+  private versionSesion = 0;
 
-  private usuarioActualSubject = new BehaviorSubject<UsuarioSesion | null>(this.cargarSesionAlmacenada());
-  public usuarioActual$ = this.usuarioActualSubject.asObservable();
+  private readonly restauracion$ = defer(() => {
+    const token = this.leerTokenAlmacenado();
+    if (!token) return of(false);
 
-  constructor(private http: HttpClient) {}
+    const version = this.versionSesion;
+    return this.http.get<Omit<UsuarioSesion, 'token'>>(AUTH_PERFIL_URL, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10_000
+    }).pipe(
+      map(perfil => {
+        if (version === this.versionSesion) {
+          this.guardarSesion({ ...perfil, token });
+        }
+        return this.estaAutenticado();
+      }),
+      catchError((error: HttpErrorResponse) => {
+        if (version === this.versionSesion && error.status === 401) {
+          this.logout();
+        }
+        return of(this.estaAutenticado());
+      })
+    );
+  }).pipe(share());
 
-  public get usuarioActual(): UsuarioSesion | null {
+  constructor(private readonly http: HttpClient) {}
+
+  get usuarioActual(): UsuarioSesion | null {
     return this.usuarioActualSubject.value;
   }
 
-  public estaAutenticado(): boolean {
-    return !!this.usuarioActualSubject.value;
+  estaAutenticado(): boolean {
+    return this.usuarioActual !== null;
   }
 
-  public obtenerToken(): string | null {
-    return this.usuarioActualSubject.value?.token ?? null;
+  validarSesion(): Observable<boolean> {
+    return defer(() => this.estaAutenticado() ? of(true) : this.restauracion$);
   }
 
-  public tieneRol(rolRequerido: string): boolean {
-    const usuario = this.usuarioActualSubject.value;
-    if (!usuario) return false;
-    // Administrador tiene jerarquía y acceso a todos los roles
-    if (usuario.rol === 'ADMINISTRADOR') return true;
-    return usuario.rol === rolRequerido;
+  tieneRol(rolRequerido: string): boolean {
+    const rol = this.usuarioActual?.rol;
+    return rol === 'ADMINISTRADOR' || rol === rolRequerido;
   }
 
-  public login(credenciales: CredencialesLogin): Observable<UsuarioSesion> {
-    return this.http.post<RespuestaLogin>(`${this.apiUrl}/login`, credenciales).pipe(
-      map(res => {
-        const usuario: UsuarioSesion = {
-          ...res.usuario,
-          token: res.token
-        };
-        this.guardarSesion(usuario);
-        return usuario;
-      }),
-      catchError(error => {
-        // Fallback demo para desarrollo ágil / pruebas locales (S115 Frontend)
-        if (error.status === 0 || error.status === 404) {
-          const usuarioMock = this.autenticarDemo(credenciales);
-          if (usuarioMock) {
-            this.guardarSesion(usuarioMock);
-            return of(usuarioMock);
-          }
-        }
-        return throwError(() => error);
+  login(credenciales: CredencialesLogin): Observable<UsuarioSesion> {
+    return this.http.post<RespuestaLogin>(AUTH_LOGIN_URL, credenciales, { timeout: 10_000 }).pipe(
+      map(({ usuario, token }) => {
+        const sesion = { ...usuario, token };
+        this.guardarSesion(sesion);
+        return sesion;
       })
     );
   }
 
-  public logout(): void {
+  logout(): void {
+    this.versionSesion++;
     localStorage.removeItem(this.storageKey);
     this.usuarioActualSubject.next(null);
   }
 
   private guardarSesion(usuario: UsuarioSesion): void {
+    this.versionSesion++;
     localStorage.setItem(this.storageKey, JSON.stringify(usuario));
     this.usuarioActualSubject.next(usuario);
   }
 
-  private cargarSesionAlmacenada(): UsuarioSesion | null {
+  private leerTokenAlmacenado(): string | null {
     try {
-      const data = localStorage.getItem(this.storageKey);
-      return data ? JSON.parse(data) : null;
+      const sesion = JSON.parse(localStorage.getItem(this.storageKey) ?? 'null');
+      return typeof sesion?.token === 'string' && sesion.token.trim() ? sesion.token : null;
     } catch {
       return null;
     }
-  }
-
-  private autenticarDemo(credenciales: CredencialesLogin): UsuarioSesion | null {
-    const usr = credenciales.username.trim().toLowerCase();
-    const pwd = credenciales.password;
-
-    if (usr === 'admin' && pwd === 'admin123') {
-      return {
-        id: 'usr-admin-demo',
-        username: 'admin',
-        nombreCompleto: 'Administrador UAM',
-        rol: 'ADMINISTRADOR',
-        token: 'demo-jwt-token-admin'
-      };
-    }
-
-    if ((usr === 'operador' || usr === 'operador1') && pwd === 'operador123') {
-      return {
-        id: 'usr-operador-demo',
-        username: 'operador',
-        nombreCompleto: 'Operador de Turno',
-        rol: 'OPERADOR',
-        token: 'demo-jwt-token-operador'
-      };
-    }
-
-    return null;
   }
 }

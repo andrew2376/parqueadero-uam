@@ -108,6 +108,13 @@
           <span class="cupos-text">Cupos disponibles: <strong>{{ cuposActuales }}</strong></span>
         </div>
 
+        <!-- Indicador de auditoría de validación manual (S201) -->
+        @if (mensajeValidacionManual) {
+          <div class="manual-audit-badge">
+            <span>🛡️ {{ mensajeValidacionManual }}</span>
+          </div>
+        }
+
         <!-- Mensaje de feedback de barrera tras registrar -->
         @if (resultadoIngreso) {
           <div class="barrier-result-box" [class.allowed]="resultadoIngreso.permitido" [class.denied]="!resultadoIngreso.permitido">

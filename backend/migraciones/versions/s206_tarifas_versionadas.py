@@ -1,9 +1,7 @@
-
 """Versionar tarifas y agregar periodos de vigencia - S206."""
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision = "s206_tarifas_versionadas"
 down_revision = ("05a3d6616f50", "f3e3762a3082")

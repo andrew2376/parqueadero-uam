@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -5,6 +6,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
+from app.modulos.auditoria.dominio.auditoria import Auditoria
+from app.modulos.auditoria.infraestructura.auditoria_repositorio_sqlalchemy import (
+    AuditoriaRepositorioSQLAlchemy,
+)
+from app.modulos.autenticacion.dominio.usuario import RolUsuario, Usuario
+from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
 from app.modulos.carriles.aplicacion.casos_uso_carril import (
     ActualizarCarril,
     CambiarEstadoCarril,
@@ -41,13 +48,16 @@ def crear_carril(
 
     try:
         caso_uso = CrearCarril(repositorio)
+
         return caso_uso.ejecutar(
             sede_id=datos.sede_id,
             nombre=datos.nombre,
             tipo=datos.tipo,
         )
+
     except IntegrityError:
         sesion.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="La sede no existe o ya tiene un carril con ese nombre.",
@@ -103,18 +113,28 @@ def actualizar_carril(
 
     try:
         caso_uso = ActualizarCarril(repositorio)
-        return caso_uso.ejecutar(
+
+        carril = caso_uso.ejecutar(
             carril_id=carril_id,
             nombre=datos.nombre,
             tipo=datos.tipo,
         )
+
+        sesion.commit()
+
+        return carril
+
     except ValueError as error:
+        sesion.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
         ) from error
+
     except IntegrityError:
         sesion.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Ya existe un carril con ese nombre en la sede.",
@@ -129,17 +149,59 @@ def cambiar_estado_carril(
     carril_id: UUID,
     datos: CarrilCambiarEstado,
     sesion: Session = Depends(obtener_sesion),
+    usuario_actual: Usuario = Depends(requerir_rol(RolUsuario.ADMINISTRADOR)),
 ):
-    repositorio = CarrilRepositorioSQLAlchemy(sesion)
-    caso_uso = CambiarEstadoCarril(repositorio)
+    repositorio_carril = CarrilRepositorioSQLAlchemy(sesion)
+    repositorio_auditoria = AuditoriaRepositorioSQLAlchemy(sesion)
+
+    caso_uso = CambiarEstadoCarril(repositorio_carril)
 
     try:
-        return caso_uso.ejecutar(
+        # 1. Cambiar el estado del carril.
+        carril = caso_uso.ejecutar(
             carril_id=carril_id,
             activo=datos.activo,
         )
+
+        # 2. Crear el registro de auditoría.
+        auditoria = Auditoria(
+            usuario_id=usuario_actual.id,
+            username=usuario_actual.username,
+            accion="ACTIVAR_CARRIL" if datos.activo else "DESACTIVAR_CARRIL",
+            entidad="CARRIL",
+            entidad_id=str(carril.id),
+            fecha_hora=datetime.now(UTC),
+            detalles={
+                "activo": carril.activo,
+                "nombre_carril": carril.nombre,
+                "tipo_carril": carril.tipo.value,
+            },
+        )
+
+        # 3. Registrar auditoría sin confirmar todavía.
+        repositorio_auditoria.registrar_sin_commit(auditoria)
+
+        # 4. Confirmar conjuntamente el cambio y la auditoría.
+        sesion.commit()
+
+        return carril
+
     except ValueError as error:
+        sesion.rollback()
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
         ) from error
+
+    except IntegrityError:
+        sesion.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No fue posible completar el cambio de estado del carril.",
+        ) from None
+
+    except Exception:
+        sesion.rollback()
+        raise

@@ -1,3 +1,4 @@
+
 import { Routes } from '@angular/router';
 import { PanelComponent } from './features/panel/panel';
 import { LoginComponent } from './features/auth/login/login';
@@ -6,17 +7,21 @@ import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+
   { path: '', redirectTo: 'panel', pathMatch: 'full' },
+
   {
     path: 'panel',
     component: PanelComponent,
     canActivate: [authGuard]
   },
+
   {
     path: 'ingreso',
     component: ControlIngresoComponent,
     canActivate: [authGuard]
   },
+
   {
     path: 'carriles',
     loadComponent: () =>
@@ -25,5 +30,24 @@ export const routes: Routes = [
     canActivate: [authGuard],
     data: { rol: 'ADMINISTRADOR' }
   },
+
+  {
+    path: 'tarifas',
+    loadComponent: () =>
+      import('./funcionalidades/tarifas/paginas/gestion-tarifas/gestion-tarifas')
+        .then(m => m.GestionTarifas),
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' }
+  },
+
+  {
+    path: 'cupos',
+    loadComponent: () =>
+      import('./funcionalidades/cupos/paginas/gestion-cupos/gestion-cupos')
+        .then(m => m.GestionCupos),
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' }
+  },
+
   { path: '**', redirectTo: 'panel' }
 ];
