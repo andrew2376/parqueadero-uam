@@ -48,9 +48,7 @@ def consultar_cobro(
         ) from error
 
     # 2. Obtener la primera sede, igual que el panel del operador.
-    sede = sesion.scalars(
-        select(SedeModelo).limit(1)
-    ).first()
+    sede = sesion.scalars(select(SedeModelo).limit(1)).first()
 
     if sede is None:
         raise HTTPException(
@@ -88,11 +86,7 @@ def consultar_cobro(
         )
 
     # 5. Consultar si el cobro ya tiene un pago registrado.
-    pago = (
-        sesion.query(PagoModelo)
-        .filter(PagoModelo.cobro_id == cobro.id)
-        .first()
-    )
+    pago = sesion.query(PagoModelo).filter(PagoModelo.cobro_id == cobro.id).first()
 
     # 6. Consultar si el vehículo todavía está dentro de la sede.
     estancia_activa = (
