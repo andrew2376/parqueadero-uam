@@ -1,3 +1,4 @@
+
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
@@ -38,3 +39,25 @@ class CobroConsultaRespuesta(BaseModel):
     pago_id: UUID | None = None
     fecha_hora_pago: datetime | None = None
     vehiculo_dentro: bool
+
+
+class OrdenMercadoPagoCrear(BaseModel):
+    cobro_id: UUID
+    email: str = Field(
+        min_length=5,
+        max_length=254,
+    )
+    clave_idempotencia: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+
+class OrdenMercadoPagoRespuesta(BaseModel):
+    orden_id: UUID
+    cobro_id: UUID
+    estado: str
+    valor: Decimal
+    moneda: str
+    checkout_url: str | None = None
+    external_reference: str
