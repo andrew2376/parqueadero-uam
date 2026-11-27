@@ -11,14 +11,28 @@ class Configuracion(BaseSettings):
     nombre_aplicacion: str = "API Parqueadero LPR"
     entorno: str = "desarrollo"
     prefijo_api: str = "/api/v1"
+
+    # Base de datos
     url_base_datos: str
+
+    # Seguridad
     secreto_jwt: str
     algoritmo_jwt: str = "HS256"
+
+    # Configuración general
     umbral_confianza_lectura: float = 0.85
     zona_horaria: str = "America/Bogota"
     origenes_permitidos: list[str] = ["http://localhost:4200"]
 
-    model_config = SettingsConfigDict(env_file=RUTA_ENV, extra="ignore")
+    # Mercado Pago
+    mercado_pago_access_token: str | None = None
+    mercado_pago_webhook_secret: str | None = None
+    mercado_pago_base_url: str = "https://api.mercadopago.com"
+
+    model_config = SettingsConfigDict(
+        env_file=RUTA_ENV,
+        extra="ignore",
+    )
 
 
 @lru_cache
