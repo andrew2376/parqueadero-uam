@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -97,11 +96,7 @@ def consultar_cobro(
         )
 
     # 5. Consultar si el cobro ya tiene un pago registrado.
-    pago = (
-        sesion.query(PagoModelo)
-        .filter(PagoModelo.cobro_id == cobro.id)
-        .first()
-    )
+    pago = sesion.query(PagoModelo).filter(PagoModelo.cobro_id == cobro.id).first()
 
     # 6. Consultar si el vehículo todavía está dentro de la sede.
     estancia_activa = (

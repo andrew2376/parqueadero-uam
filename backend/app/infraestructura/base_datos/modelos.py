@@ -1,4 +1,3 @@
-
 """
 Registro central de modelos SQLAlchemy.
 

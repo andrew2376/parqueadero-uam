@@ -1,4 +1,3 @@
-
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -39,25 +38,17 @@ class CrearOrdenMercadoPago:
             raise ValueError("La clave de idempotencia es obligatoria.")
 
         if len(clave_idempotencia) > 100:
-            raise ValueError(
-                "La clave de idempotencia no puede superar 100 caracteres."
-            )
+            raise ValueError("La clave de idempotencia no puede superar 100 caracteres.")
 
         # Verificar que el cobro exista.
-        cobro = (
-            self.sesion.query(CobroModelo)
-            .filter(CobroModelo.id == cobro_id)
-            .first()
-        )
+        cobro = self.sesion.query(CobroModelo).filter(CobroModelo.id == cobro_id).first()
 
         if cobro is None:
             raise ValueError("El cobro no existe.")
 
         # Verificar que el cobro no tenga un pago registrado.
         pago_existente = (
-            self.sesion.query(PagoModelo)
-            .filter(PagoModelo.cobro_id == cobro_id)
-            .first()
+            self.sesion.query(PagoModelo).filter(PagoModelo.cobro_id == cobro_id).first()
         )
 
         if pago_existente is not None:
@@ -66,18 +57,13 @@ class CrearOrdenMercadoPago:
         # Buscar una orden anterior con la misma clave.
         orden = (
             self.sesion.query(OrdenMercadoPagoModelo)
-            .filter(
-                OrdenMercadoPagoModelo.clave_idempotencia
-                == clave_idempotencia
-            )
+            .filter(OrdenMercadoPagoModelo.clave_idempotencia == clave_idempotencia)
             .first()
         )
 
         if orden is not None:
             if orden.cobro_id != cobro_id:
-                raise ValueError(
-                    "La clave de idempotencia ya fue utilizada para otro cobro."
-                )
+                raise ValueError("La clave de idempotencia ya fue utilizada para otro cobro.")
 
             # Si ya tenemos el enlace, devolvemos la orden existente.
             if orden.checkout_url:
@@ -92,9 +78,7 @@ class CrearOrdenMercadoPago:
             valor = Decimal(str(cobro.valor_tarifa))
 
             if valor <= 0:
-                raise ValueError(
-                    "El valor del cobro debe ser mayor que cero."
-                )
+                raise ValueError("El valor del cobro debe ser mayor que cero.")
 
             # Crear identificadores internos.
             orden_id = uuid4()
@@ -151,10 +135,7 @@ class CrearOrdenMercadoPago:
         checkout_url = respuesta.get("checkout_url")
 
         if not proveedor_order_id or not checkout_url:
-            raise ValueError(
-                "Mercado Pago no devolvió el identificador "
-                "o el enlace de checkout."
-            )
+            raise ValueError("Mercado Pago no devolvió el identificador o el enlace de checkout.")
 
         orden.proveedor_order_id = str(proveedor_order_id)
         orden.checkout_url = checkout_url

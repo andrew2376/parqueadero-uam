@@ -1,4 +1,3 @@
-
 import httpx
 
 from app.configuracion import Configuracion
@@ -13,13 +12,9 @@ class MercadoPagoCliente:
         self.access_token = configuracion.mercado_pago_access_token
         self.base_url = configuracion.mercado_pago_base_url.rstrip("/")
 
-    def _obtener_headers(
-        self, clave_idempotencia: str | None = None
-    ) -> dict[str, str]:
+    def _obtener_headers(self, clave_idempotencia: str | None = None) -> dict[str, str]:
         if not self.access_token:
-            raise MercadoPagoError(
-                "No está configurado el Access Token de Mercado Pago."
-            )
+            raise MercadoPagoError("No está configurado el Access Token de Mercado Pago.")
 
         headers = {
             "Authorization": f"Bearer {self.access_token}",
@@ -31,9 +26,7 @@ class MercadoPagoCliente:
 
         return headers
 
-    def crear_orden(
-        self, datos: dict, clave_idempotencia: str
-    ) -> dict:
+    def crear_orden(self, datos: dict, clave_idempotencia: str) -> dict:
         url = f"{self.base_url}/v1/orders"
 
         try:
@@ -53,9 +46,7 @@ class MercadoPagoCliente:
             ) from error
 
         except httpx.RequestError as error:
-            raise MercadoPagoError(
-                "No fue posible conectar con Mercado Pago."
-            ) from error
+            raise MercadoPagoError("No fue posible conectar con Mercado Pago.") from error
 
     def consultar_orden(self, proveedor_order_id: str) -> dict:
         url = f"{self.base_url}/v1/orders/{proveedor_order_id}"
@@ -76,6 +67,4 @@ class MercadoPagoCliente:
             ) from error
 
         except httpx.RequestError as error:
-            raise MercadoPagoError(
-                "No fue posible conectar con Mercado Pago."
-            ) from error
+            raise MercadoPagoError("No fue posible conectar con Mercado Pago.") from error
