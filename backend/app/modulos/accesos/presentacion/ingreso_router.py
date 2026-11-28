@@ -11,6 +11,8 @@ from app.modulos.accesos.presentacion.esquemas_ingreso import (
     RegistrarIngresoEsquema,
     ResultadoIngresoEsquema,
 )
+from app.modulos.autenticacion.dominio.usuario import RolUsuario
+from app.modulos.autenticacion.presentacion.dependencias_auth import requerir_rol
 from app.modulos.carriles.dominio.carril import TipoCarril
 from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 
@@ -22,6 +24,7 @@ router = APIRouter(
 
 @router.post(
     "/ingreso",
+    dependencies=[Depends(requerir_rol(RolUsuario.OPERADOR))],
     response_model=ResultadoIngresoEsquema,
     status_code=status.HTTP_200_OK,
 )
