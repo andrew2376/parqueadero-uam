@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.infraestructura.base_datos.conexion import obtener_sesion
@@ -11,6 +11,8 @@ from app.modulos.accesos.presentacion.esquemas_ingreso import (
     RegistrarIngresoEsquema,
     ResultadoIngresoEsquema,
 )
+from app.modulos.carriles.dominio.carril import TipoCarril
+from app.modulos.carriles.infraestructura.carril_modelo import CarrilModelo
 
 router = APIRouter(
     prefix="/accesos",
@@ -28,6 +30,17 @@ def registrar_ingreso(
     sesion: Session = Depends(obtener_sesion),
     repositorio: AccesoRepositorio = Depends(obtener_repositorio_acceso),
 ) -> ResultadoIngresoEsquema:
+    carril = sesion.get(CarrilModelo, datos.carril_id, with_for_update=True)
+    if (
+        carril is None
+        or carril.sede_id != datos.sede_id
+        or not carril.activo
+        or carril.tipo not in (TipoCarril.ENTRADA, TipoCarril.MIXTO)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="El carril no está habilitado para ingreso en esta sede.",
+        )
     caso_uso = RegistrarIngresoVehiculo(repositorio=repositorio, sesion=sesion)
 
     resultado = caso_uso.ejecutar(
