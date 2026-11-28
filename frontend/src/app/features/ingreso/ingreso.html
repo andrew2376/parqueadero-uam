@@ -1,146 +1,102 @@
-<div class="control-ingreso-page">
-  <!-- Cabecera de la sección -->
-  <div class="page-header">
-    <div class="header-info">
-      <h1 class="header-title">Control de ingreso</h1>
-      <p class="header-subtitle">Reconocimiento de placas y verificación manual</p>
-    </div>
-  </div>
-
-  <!-- Contenedor principal de dos columnas según Figma -->
-  <div class="ingreso-grid">
-    <!-- Columna Izquierda: Lectura de placa / Cámara LPR -->
-    <section class="card lpr-card">
-      <div class="card-header">
-        <h2 class="card-title">Lectura de placa</h2>
-        <span class="card-subtitle">Simulador LPR · Datos ficticios</span>
+<section class="acceso">
+  <header class="encabezado">
+    <h1>Control de acceso</h1>
+    <div class="configuracion">
+      <div class="direccion" role="group" aria-label="Dirección del acceso">
+        <button type="button" [attr.aria-pressed]="direccion() === 'ENTRADA'"
+          [disabled]="registrando()" (click)="seleccionarDireccion('ENTRADA')">Entrada</button>
+        <button type="button" [attr.aria-pressed]="direccion() === 'SALIDA'"
+          [disabled]="registrando()" (click)="seleccionarDireccion('SALIDA')">Salida</button>
       </div>
-
-      <!-- Visor de la cámara simulada -->
-      <div class="camera-viewport">
-        <span class="viewport-tag">VISTA SIMULADA · NO ES VIDEO EN VIVO</span>
-
-        <div class="car-illustration">
-          <!-- Carrocería esquemática -->
-          <div class="car-body">
-            <div class="car-windshield"></div>
-            <div class="plate-badge-preview">
-              <span class="plate-text">{{ placaActual || 'ABC123' }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Banner de estado de la placa detectada -->
-      @if (placaActual) {
-        <div class="status-banner" [class.low-confidence]="esBajaConfianza">
-          <div class="status-content">
-            <strong class="banner-title">Placa detectada: {{ placaActual }}</strong>
-            <span class="banner-confidence">Confianza estimada: {{ confianzaActual }} %</span>
-          </div>
-        </div>
-      }
-
-      <!-- Botón de simular nueva lectura -->
-      <button
-        type="button"
-        class="btn-simulate"
-        (click)="onSimularLectura()"
-      >
-        Simular nueva lectura
-      </button>
-
-      <p class="card-foot-hint">Si la confianza es baja, verifica y corrige la placa.</p>
-    </section>
-
-    <!-- Columna Derecha: Verificar ingreso -->
-    <section class="card verify-card">
-      <div class="card-header">
-        <h2 class="card-title">Verificar ingreso</h2>
-        <span class="card-subtitle">Confirma o corrige los datos detectados.</span>
-      </div>
-
-      <form [formGroup]="ingresoForm" (ngSubmit)="onRegistrarIngreso()" class="verify-form">
-        <!-- Campo: Placa normalizada -->
-        <div class="form-group">
-          <label for="placa">Placa normalizada</label>
-          <div class="input-wrapper">
-            <input
-              id="placa"
-              type="text"
-              formControlName="placa"
-              placeholder="ABC123"
-              maxlength="6"
-              (input)="onPlacaManualChange()"
-            />
-          </div>
-        </div>
-
-        <!-- Campo: Tipo de vehículo -->
-        <div class="form-group">
-          <label for="tipoVehiculo">Tipo de vehículo</label>
-          <div class="input-wrapper readonly-wrapper">
-            <input
-              id="tipoVehiculo"
-              type="text"
-              formControlName="tipoVehiculoTexto"
-              readonly
-            />
-          </div>
-        </div>
-
-        <!-- Campo: Sede -->
-        <div class="form-group">
-          <label for="sede">Sede</label>
-          <div class="input-wrapper readonly-wrapper">
-            <input
-              id="sede"
-              type="text"
-              formControlName="sede"
-              readonly
-            />
-          </div>
-        </div>
-
-        <!-- Indicador de Cupos Disponibles -->
-        <div class="cupos-banner">
-          <span class="cupos-icon">🅿️</span>
-          <span class="cupos-text">Cupos disponibles: <strong>{{ cuposActuales }}</strong></span>
-        </div>
-
-        <!-- Indicador de auditoría de validación manual (S201) -->
-        @if (mensajeValidacionManual) {
-          <div class="manual-audit-badge">
-            <span>🛡️ {{ mensajeValidacionManual }}</span>
-          </div>
-        }
-
-        <!-- Mensaje de feedback de barrera tras registrar -->
-        @if (resultadoIngreso) {
-          <div class="barrier-result-box" [class.allowed]="resultadoIngreso.permitido" [class.denied]="!resultadoIngreso.permitido">
-            <div class="barrier-header-row">
-              <span class="traffic-light-dot" [class.green]="resultadoIngreso.permitido" [class.red]="!resultadoIngreso.permitido"></span>
-              <strong>{{ resultadoIngreso.permitido ? 'BARRERA LEVANTADA (ABIERTA)' : 'BARRERA CERRADA' }}</strong>
-            </div>
-            <p class="barrier-msg">{{ resultadoIngreso.mensaje }}</p>
-          </div>
-        }
-
-        <!-- Botón Registrar ingreso -->
-        <button
-          type="submit"
-          class="btn-register"
-          [disabled]="procesando || ingresoForm.invalid"
-        >
-          @if (procesando) {
-            <span>Registrando acceso...</span>
-          } @else {
-            <span>Registrar ingreso</span>
+      <label>Sede
+        <select #selectorSede [value]="sedeId()" [disabled]="registrando() || !sedes().length"
+          (change)="seleccionarSede(selectorSede.value)">
+          <option value="">Selecciona una sede</option>
+          @for (sede of sedes(); track sede.id) {
+            <option [value]="sede.id" [selected]="sede.id === sedeId()">{{ sede.nombre }}</option>
           }
-        </button>
+        </select>
+      </label>
+      <label>Carril
+        <select #selectorCarril [value]="carrilId()" [disabled]="registrando() || !carrilesDisponibles().length"
+          (change)="seleccionarCarril(selectorCarril.value)">
+          <option value="">Selecciona un carril</option>
+          @for (opcion of carrilesDisponibles(); track opcion.id) {
+            <option [value]="opcion.id" [selected]="opcion.id === carrilId()">{{ opcion.nombre }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    @if (errorCarriles()) {
+      <p class="error" role="alert">{{ errorCarriles() }}</p>
+    } @else if (sedeId() && !carrilesDisponibles().length) {
+      <p role="status">Esta sede no tiene carriles activos para esta dirección.</p>
+    }
+  </header>
 
-        <p class="card-foot-hint text-center">Sin cupos disponibles, el ingreso se bloquea.</p>
+  <div class="columnas">
+    <section class="tarjeta" aria-labelledby="titulo-camara">
+      <h2 id="titulo-camara">Cámara de {{ direccion() === 'ENTRADA' ? 'entrada' : 'salida' }}</h2>
+      <p class="conexion" role="status">Estado: {{ camara() }}</p>
+      <div class="visor">
+        <video #video autoplay muted playsinline [class.oculto]="camara() !== 'conectada'"
+          aria-label="Vista previa de la cámara"></video>
+        @if (camara() === 'conectada') {
+          <div class="recuadro-placa" aria-hidden="true"
+            [style.width.%]="zonaLectura.ancho * 100" [style.height.%]="zonaLectura.alto * 100"></div>
+        } @else {
+          <span>Video no disponible</span>
+        }
+      </div>
+      @if (camara() === 'conectada') {
+        <p>Ubica la placa completa dentro del recuadro.</p>
+      }
+      <div class="acciones">
+        <button type="button" (click)="alternarCamara()">
+          {{ camara() === 'apagada' ? 'Activar cámara' : 'Desactivar cámara' }}
+        </button>
+        <button type="button" class="primario"
+          [disabled]="camara() !== 'conectada' || capturando() || registrando()" (click)="capturar()">
+          {{ capturando() ? 'Leyendo placa…' : 'Capturar placa' }}
+        </button>
+      </div>
+      @if (errorCamara()) {
+        <p class="error" role="alert">{{ errorCamara() }}</p>
+      }
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-registro">
+      <h2 id="titulo-registro">Registro de acceso</h2>
+      <form (submit)="$event.preventDefault(); registrar()">
+        <label>Placa
+          <input #entradaPlaca class="placa" [value]="placa()" [readonly]="registrando()"
+            (input)="editarPlaca(entradaPlaca.value)" autocomplete="off" autocapitalize="characters"
+            spellcheck="false" placeholder="Escribe o captura la placa" aria-describedby="revision-placa" />
+        </label>
+        <p>Tipo de vehículo: <strong>{{ tipo() === 'CARRO' ? 'Automóvil' : tipo() === 'MOTO' ? 'Motocicleta' : 'Sin identificar' }}</strong></p>
+        <p id="revision-placa">Revisa la placa antes de registrar.</p>
+        <button class="primario" type="submit" [disabled]="!puedeRegistrar()">
+          {{ registrando() ? 'Registrando…' : direccion() === 'ENTRADA' ? 'Registrar ingreso' : 'Registrar salida' }}
+        </button>
       </form>
+      <div class="resultado" aria-live="polite">
+        <strong class="barrera" [class.abierta]="barreraAbierta()">
+          {{ barreraAbierta() ? 'Barrera abierta' : 'Barrera cerrada' }}
+        </strong>
+        @if (mensaje()) { <p>{{ mensaje() }}</p> }
+      </div>
+      <div class="cupos" aria-live="polite">
+        <h3>Cupos disponibles</h3>
+        @if (errorCupos()) {
+          <p class="error">{{ errorCupos() }}</p>
+        } @else if (cupos().length) {
+          @for (cupo of cupos(); track cupo.tipo_vehiculo) {
+            <span>{{ cupo.tipo_vehiculo === 'CARRO' ? 'Carros' : 'Motos' }} <strong>{{ cupo.disponibles }}</strong></span>
+          }
+        } @else {
+          <p>{{ sedeId() ? 'Consultando disponibilidad…' : 'Selecciona una sede.' }}</p>
+        }
+      </div>
     </section>
   </div>
-</div>
+</section>

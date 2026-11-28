@@ -1,182 +1,89 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-import { LecturaPlaca, ResultadoAcceso } from '../models/acceso.model';
+import { Injectable, inject } from '@angular/core';
+import { map, switchMap } from 'rxjs';
+import { API_BASE_URL } from '../api.config';
+import { TipoVehiculo } from '../models/vehiculo.model';
 
-export interface SolicitudIngreso {
-  carrilId: string;
-  placa: string;
-  tipoVehiculo?: 'CARRO' | 'MOTO';
-  confianzaLectura?: number;
-}
+export type Direccion = 'ENTRADA' | 'SALIDA';
 
-export interface PlacaSimulada {
-  placa: string;
-  tipo: 'CARRO' | 'MOTO';
-  confianza: number;
-}
-
-export interface LecturaManualLPR {
-  carrilId: string;
-  placaConfirmada: string;
-  operadorId: string;
-  placaDetectadaPrevia?: string;
-  confianzaPrevia?: number;
-  umbralConfianza?: number;
-}
-
-export interface LecturaLPRRespuesta {
+export interface CarrilActivo {
   id: string;
-  carrilId: string;
-  placa: string;
-  confianza: number;
-  origen: string;
-  estado: string;
-  tipoVehiculo: string;
-  placaOriginalDetectada?: string;
-  operadorId?: string;
-  requiereConfirmacionManual: boolean;
+  sede_id: string;
+  nombre_sede: string;
+  nombre: string;
+  tipo: Direccion | 'MIXTO';
+  activo: boolean;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface Cupo {
+  tipo_vehiculo: TipoVehiculo;
+  disponibles: number;
+}
+
+export interface ResultadoOperacion {
+  abierta: boolean;
+  mensaje: string;
+}
+
+@Injectable({ providedIn: 'root' })
 export class IngresoService {
-  private readonly apiUrl = 'http://localhost:8001/api/v1/accesos';
-  private readonly lprApiUrl = 'http://localhost:8001/api/v1/lpr';
+  private readonly http = inject(HttpClient);
 
-  // ID de la sede principal y carril de entrada real registrado en PostgreSQL
-  public readonly sedeIdDefault = '03793b27-4b34-42ea-9bb0-28f8bc5b330d';
-  public readonly carrilEntradaDefault = 'c1343f2e-20d6-4374-981c-fcb00d6130c2';
-
-  // Catálogo de placas demo para la simulación LPR académica
-  private readonly catalogoDemo: PlacaSimulada[] = [
-    { placa: 'ABC123', tipo: 'CARRO', confianza: 96 },
-    { placa: 'KLR65A', tipo: 'MOTO', confianza: 94 },
-    { placa: 'XYZ789', tipo: 'CARRO', confianza: 98 },
-    { placa: 'UAM001', tipo: 'CARRO', confianza: 99 },
-    { placa: 'MTO45B', tipo: 'MOTO', confianza: 88 },
-    { placa: 'DEF456', tipo: 'CARRO', confianza: 62 } // Lectura de baja confianza (<70%)
-  ];
-
-  private indiceDemo = 0;
-
-  constructor(private http: HttpClient) {}
-
-  /**
-   * Simula la lectura automática de la cámara LPR
-   */
-  simularLectura(): PlacaSimulada {
-    const item = this.catalogoDemo[this.indiceDemo % this.catalogoDemo.length];
-    this.indiceDemo++;
-    return { ...item };
+  listarCarriles() {
+    return this.http.get<{ sede_id: string; sede_nombre: string }>(
+      `${API_BASE_URL}/panel/resumen`,
+    ).pipe(switchMap(sede => {
+      const url = `${API_BASE_URL}/carriles/sede/${encodeURIComponent(sede.sede_id)}`;
+      return this.http.get<Omit<CarrilActivo, 'nombre_sede'>[]>(url).pipe(
+        map(carriles => carriles
+          .filter(carril => carril.activo && carril.sede_id === sede.sede_id)
+          .map(carril => ({ ...carril, nombre_sede: sede.sede_nombre }))),
+      );
+    }));
   }
 
-  /**
-   * Clasifica la placa según el estándar colombiano
-   */
-  clasificarPlaca(placa: string): 'CARRO' | 'MOTO' | 'DESCONOCIDO' {
-    const limpia = placa.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (/^[A-Z]{3}\d{3}$/.test(limpia)) return 'CARRO';
-    if (/^[A-Z]{3}\d{2}[A-Z]$/.test(limpia)) return 'MOTO';
-    return 'DESCONOCIDO';
+  consultarCupos(sedeId: string) {
+    return this.http.get<Cupo[]>(`${API_BASE_URL}/cupos/sede/${encodeURIComponent(sedeId)}`);
   }
 
-  /**
-   * Valida y audita una lectura manual o corregida de baja confianza (S201)
-   */
-  validarLecturaManual(datos: LecturaManualLPR): Observable<LecturaLPRRespuesta> {
-    return this.http.post<any>(`${this.lprApiUrl}/validar-manual`, {
-      carril_id: datos.carrilId || this.carrilEntradaDefault,
-      placa_confirmada: datos.placaConfirmada.trim().toUpperCase(),
-      operador_id: datos.operadorId,
-      placa_detectada_previa: datos.placaDetectadaPrevia,
-      confianza_previa: datos.confianzaPrevia,
-      umbral_confianza: datos.umbralConfianza ?? 0.70
-    }).pipe(
-      map(res => ({
-        id: res.id,
-        carrilId: res.carril_id,
-        placa: res.placa,
-        confianza: res.confianza,
-        origen: res.origen,
-        estado: res.estado,
-        tipoVehiculo: res.tipo_vehiculo,
-        placaOriginalDetectada: res.placa_original_detectada,
-        operadorId: res.operador_id,
-        requiereConfirmacionManual: res.requiere_confirmacion_manual
-      })),
-      catchError(() => of({
-        id: 'lpr-manual-local',
-        carrilId: datos.carrilId || this.carrilEntradaDefault,
-        placa: datos.placaConfirmada.trim().toUpperCase(),
-        confianza: 100,
-        origen: 'MANUAL',
-        estado: 'VALIDADO',
-        tipoVehiculo: this.clasificarPlaca(datos.placaConfirmada),
-        requiereConfirmacionManual: false
-      }))
-    );
+  guardarLecturaManual(carril: CarrilActivo, placa: string) {
+    return this.http.post<{ sede_id: string; carril_id: string; placa: string; origen: string }>(
+      `${API_BASE_URL}/lecturas-lpr/manual`, { carril_id: carril.id, placa },
+    ).pipe(map(evento => {
+      if (evento.sede_id !== carril.sede_id || evento.carril_id !== carril.id
+        || evento.placa !== placa || evento.origen !== 'MANUAL') {
+        throw new Error('La evidencia no coincide con el ingreso.');
+      }
+    }));
   }
 
-  /**
-   * Registra el ingreso en el backend (POST /api/v1/accesos/ingreso)
-   * con soporte de fallback para desarrollo / demostración.
-   */
-  registrarIngreso(solicitud: SolicitudIngreso): Observable<ResultadoAcceso> {
-    const carrilReal = solicitud.carrilId || this.carrilEntradaDefault;
-
-    return this.http.post<any>(`${this.apiUrl}/ingreso`, {
-      sede_id: this.sedeIdDefault,
-      carril_id: carrilReal,
-      placa: solicitud.placa.trim().toUpperCase()
-    }).pipe(
-      map(res => {
-        const respuesta: ResultadoAcceso = {
-          permitido: res.autorizado,
-          estadoBarrera: res.decision_barrera === 'ABRIR' ? 'ABIERTA' : 'CERRADA',
-          tipoVehiculo: res.tipo_vehiculo || 'CARRO',
-          placa: res.placa,
-          mensaje: res.mensaje,
-          cuposDisponibles: {
-            carros: res.cupos_disponibles_restantes ?? 71,
-            motos: 40
-          },
-          fechaHora: new Date().toISOString()
-        };
-        return respuesta;
-      }),
-      catchError((error) => {
-        // En caso de conflicto de negocio (409 anti-passback) o mensaje de regla de negocio
-        if (error.status === 409 || error.status === 400 || error.status === 422) {
-          const detalle = error.error?.detail || error.error?.mensaje || 'Ingreso no autorizado por regla de negocio';
-          return of({
-            permitido: false,
-            estadoBarrera: 'CERRADA' as const,
-            tipoVehiculo: 'CARRO' as const,
-            placa: solicitud.placa.trim().toUpperCase(),
-            mensaje: detalle,
-            fechaHora: new Date().toISOString()
-          });
-        }
-
-        // Fallback demo local para cuando el backend no esté encendido
-        const tipo = solicitud.tipoVehiculo || this.clasificarPlaca(solicitud.placa);
-        const resultadoSimulado: ResultadoAcceso = {
-          permitido: true,
-          estadoBarrera: 'ABIERTA',
-          tipoVehiculo: tipo === 'MOTO' ? 'MOTO' : 'CARRO',
-          placa: solicitud.placa.trim().toUpperCase(),
-          mensaje: 'BIENVENIDO - INGRESO REGISTRADO',
-          cuposDisponibles: {
-            carros: tipo === 'CARRO' ? 71 : 72,
-            motos: tipo === 'MOTO' ? 39 : 40
-          },
-          fechaHora: new Date().toISOString()
-        };
-        return of(resultadoSimulado);
-      })
-    );
+  registrar(direccion: Direccion, carril: CarrilActivo, placa: string) {
+    const datos = { sede_id: carril.sede_id, carril_id: carril.id, placa };
+    if (direccion === 'ENTRADA') {
+      return this.http.post<{
+        autorizado: boolean;
+        decision_barrera: string;
+        mensaje: string;
+      }>(`${API_BASE_URL}/accesos/ingreso`, datos).pipe(map(res => ({
+        abierta: res.autorizado === true && res.decision_barrera === 'ABRIR',
+        mensaje: res.mensaje,
+      })));
+    }
+    return this.http.get<Omit<CarrilActivo, 'nombre_sede'>>(
+      `${API_BASE_URL}/carriles/${encodeURIComponent(carril.id)}`,
+    ).pipe(switchMap(actual => {
+      if (actual.id !== carril.id || actual.sede_id !== carril.sede_id || !actual.activo
+        || (actual.tipo !== 'SALIDA' && actual.tipo !== 'MIXTO')) {
+        throw new Error('El carril ya no está habilitado para salida en esta sede.');
+      }
+      return this.http.post<{
+        autorizado: boolean;
+        decision_barrera: string;
+        motivo: string;
+      }>(`${API_BASE_URL}/estancias/salida`, { sede_id: carril.sede_id, placa });
+    }), map(res => ({
+      abierta: res.autorizado === true && res.decision_barrera === 'AUTORIZAR',
+      mensaje: res.motivo,
+    })));
   }
 }
