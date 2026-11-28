@@ -21,8 +21,7 @@ export interface MenuItem {
 export class SidebarComponent {
   todosLosItems: MenuItem[] = [
     { label: 'Panel general', route: '/panel', icon: 'dashboard' },
-    { label: 'Control de ingreso', route: '/ingreso', icon: 'login' },
-    { label: 'Control de salida', route: '/salida', icon: 'logout' },
+    { label: 'Control de acceso', route: '/ingreso', icon: 'login' },
     { label: 'Caja y pagos', route: '/caja', icon: 'payments' },
     { label: 'Administración de carriles', route: '/carriles', icon: 'alt_route', rolMinimo: 'ADMINISTRADOR' },
     { label: 'Gestión de tarifas', route: '/tarifas', icon: 'tune', rolMinimo: 'ADMINISTRADOR' },
